@@ -1,5 +1,11 @@
 from crawler_tools import db_ops
 import datetime
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+logger = logging.getLogger()
+logger.addHandler(logging.FileHandler('~/test.log', 'a'))
+
 
 
 class Proxy:
@@ -20,13 +26,14 @@ class Proxy:
 			self.type = "socks5"
 		else:
 			self.type = "nonsense"
+			logger.debug("Could not define proxy's type")
 
 	def get_address(self):
 		self.define_type()
 		if self.auth_data == '""':
 			return f"{self.type}://{self.domain}:{self.port}"
 		else:
-			print("Внезапно! Требуется авторизация. Такого мы не ожидали")
+			logger.debug("Внезапно! Требуется авторизация. Такого мы не ожидали")
 			return ""
 
 	def blacklist(self, connection):
@@ -55,23 +62,11 @@ class Proxy:
 			try:
 				return True
 			except Exception as e:
-				print("Fucked up while deleting")
+				logger.debug("Fucked up while deleting")
 				raise e
 		else:
 			return False
 
-	# like an actual function
-	# @staticmethod
-	# def get_proxy(connection):
-	# 	conn = connection
-	# 	list_proxy = db_ops.read_from_db(conn, "proxies", 'id', 'raw_protocol', 'auth_data',
-	# 		'domain', 'port', 'response_time', order_by = "response_time", limit = 1)[0][0].translate(str.maketrans("a","a", "()")).split(",")
-	# 	# print('This IS LIST PROXY' + str(list_proxy))
-	# 	proxy = Proxy(list_proxy[0], list_proxy[1], list_proxy[2], list_proxy[3], list_proxy[4], list_proxy[5])
-	# 	return proxy
-	# 	#0 - http
-	# 	#1 - socks4
-	# 	#2 - socks5
 
 	@staticmethod
 	def get_random_proxy(connection, raw_protocol, bad_checks):
