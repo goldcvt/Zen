@@ -76,13 +76,15 @@ class ZencrawlersourceDownloaderMiddleware:
         # Для теста можно bad_checks = 2)) Тогда точно ошибка вылезет, заблэклистим и сменим
         proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
         request.meta['proxy'] = proxy.get_address()
+        spider.logger.warning("Processing request...")
+        spider.logger.warning(f"Proxy is set to {proxy}")
         # Must either:
         # - return None: continue processing this request
         # - or return a Response object
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        return request
+        return None
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
