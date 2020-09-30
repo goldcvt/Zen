@@ -107,10 +107,10 @@ class ZencrawlersourceDownloaderMiddleware:
         if (request.meta['proxy'].find('https') == -1)and(request.meta['proxy'] != None)and(request.meta['proxy'] != ''):
             request.meta['proxy'].replace('http', 'https')
         else:
-            proxy_ops.Proxy.get_from_string(spider.connection, request.meta['proxy']).blacklist(spider.connection)
+            proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
             # TODO очевидно, строчка выше не работает)) Принты и гугломашина в деле. Кажется, поправили -
             # лохо был запрос к БД написан
-            proxy = proxy_ops.Proxy.get_type_proxy(spider.connection, 0, 0)
+            proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
             request.meta['proxy'] = proxy.get_address()
         # Must either:
         # - return None: continue processing this exception
