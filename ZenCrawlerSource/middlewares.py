@@ -7,7 +7,7 @@ from scrapy import signals
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
-from crawler_tools import proxy_ops
+from crawler_toolz import proxy_ops
 
 chans_processed = 0
 

@@ -1,4 +1,4 @@
-from crawler_tools import db_ops
+from crawler_toolz import db_ops
 import psycopg2
 
 # Define your item pipelines here

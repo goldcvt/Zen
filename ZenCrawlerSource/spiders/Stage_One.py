@@ -1,5 +1,5 @@
 import scrapy
-from crawler_tools import db_ops
+from crawler_toolz import db_ops
 import datetime
 import re
 from ZenCrawlerSource.items import ArticleItem, ChannelItem
