@@ -74,7 +74,6 @@ class ZencrawlersourceDownloaderMiddleware:
         # Called for each request that goes through the downloader
         # middleware.
         # Для теста можно bad_checks = 2)) Тогда точно ошибка вылезет, заблэклистим и сменим
-        spider.logger.warning(f"Request status is {request.status}")
         proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
         request.meta['proxy'] = proxy.get_address()
         # Must either:
@@ -92,6 +91,7 @@ class ZencrawlersourceDownloaderMiddleware:
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
+        spider.logger.warning(f"Request status is {response.status}")
         if response.url.find("zen.yandex.ru/id/") != -1:
             global chans_processed
             chans_processed += 1
@@ -110,7 +110,7 @@ class ZencrawlersourceDownloaderMiddleware:
             else:
                 proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
                 # TODO очевидно, строчка выше не работает)) Принты и гугломашина в деле. Кажется, поправили -
-                # лохо был запрос к БД написан
+                # плохо был запрос к БД написан
             proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
             request.meta['proxy'] = proxy.get_address()
         except KeyError:
