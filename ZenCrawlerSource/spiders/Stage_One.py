@@ -258,6 +258,6 @@ class IPSpider(scrapy.Spider):
         print(response.text)
 
     def closed(self, reason):
-        self.connection.close()
+        self.proxy_conn.close()
         print("Closed connection with proxy_db")
 
