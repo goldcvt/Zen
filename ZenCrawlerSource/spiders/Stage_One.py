@@ -117,8 +117,9 @@ class ExampleSpider(scrapy.Spider):
     allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
     start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
-    proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
-    zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
+    def __init__(self):
+        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
+        self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
 
     def parse(self, response):
 
@@ -248,7 +249,8 @@ class ExampleSpider(scrapy.Spider):
 class IPSpider(scrapy.Spider):
     name = "ips"
 
-    proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
+    def __init__(self):
+        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
 
     start_urls = ["http://httpbin.org/ip"]
 
