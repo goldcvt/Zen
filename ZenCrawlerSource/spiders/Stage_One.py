@@ -3,6 +3,7 @@ from crawler_toolz import db_ops
 import datetime
 import re
 from ZenCrawlerSource.items import ArticleItem, ChannelItem
+import json
 
 non_arbitrage = ['instagram.com', 'twitter.com']
 
@@ -177,9 +178,19 @@ class ExampleSpider(scrapy.Spider):
 
     def fetch_article(self, response, channel, total_articles):
         title = response.css("h1.article__title::text").get()
-        # reads = ExampleSpider.get_reads(response.css("span.article-stat__count::text").get())
-        # views = ExampleSpider.get_reads(response.css("span.article-stat-tip__value::text"))
+
         date = ExampleSpider.get_date(response.css("footer.article__statistics span.article-stat__date::text").get())
+        # url = response.url
+        # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to get_reads or
+        #     # TODO find a way to get actual reads and views
+        #     art_id = "".join(url.split("-")[-1])
+        #     author_id = "".join(url.split("/")[-2])
+        #     reads, views = response.follow(f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={art_id}" +
+        #                                    f"&publisherId={author_id}", callback=self.get_reads)
+        # else:
+        #
+        #     pass # have to use JS :(
+
         article = Articles(date, title, response.url)
         article.is_arbitrage(response)
         channel.articles.append(article)
@@ -189,6 +200,14 @@ class ExampleSpider(scrapy.Spider):
             yield ExampleSpider.itemize(channel)
             # raise scrapy.exceptions.CloseSpider(reason='Test completed') TODO implement constraints
         # TODO Fix this в целом плохой перевод в айтемы, ведь по сути у нас уже есть объекты нужные
+
+    def get_reads(self, response):
+        resp_string = u"{}".format(response.css("body p").get())
+        my_dict = json.loads(resp_string)
+        reads = my_dict["viewsTillEnd"]
+        views = my_dict["views"]
+        return reads, views
+
 
     @staticmethod
     def itemize(channel):
