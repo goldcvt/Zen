@@ -201,7 +201,8 @@ class IPNoRetryDownloaderMiddleware:  # i mean, we probably don't need retries d
             # proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
             request.meta['proxy'] = ''  # proxy.get_address()
-        except KeyError:
+        except KeyError:  # always getting triggered. TODO rework rotation logic around this
+            request.meta['proxy'] = ''
             spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
         return request
 
