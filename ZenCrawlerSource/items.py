@@ -33,6 +33,7 @@ class ChannelItem(scrapy.Item):
     is_arbitrage = scrapy.Field()
     form = scrapy.Field()
     is_crawled = scrapy.Field()
+    last_checked = scrapy.Field()
 
 
 

@@ -146,7 +146,6 @@ class ExampleSpider(scrapy.Spider):
         subs = int("".join(default_stats[0].get().split(" ")))
         audience = int("".join(default_stats[1].get().split(" ")))
         # DONE return those! Items and item pipelines TODO
-        # TODO проверка is_crawled тут
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
         chan.if_crawled(self.zen_conn)

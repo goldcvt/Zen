@@ -1,5 +1,7 @@
 from crawler_toolz import db_ops
-import psycopg2
+import datetime
+# import psycopg2
+
 
 # Define your item pipelines here
 #
@@ -19,18 +21,18 @@ class ZencrawlersourcePipeline:
 
 class ChannelPipeline:
 
-    def __init__(self):
-        self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
+    # def __init__(self):
+    #     spider.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
 
     def process_item(self, channel_item, spider):
-
         channel_dict = channel_item
         del channel_dict["articles"]
         del channel_dict["is_crawled"]
 
         if channel_item["is_crawled"]:
+            channel_item["last_checked"] = datetime.datetime.now()
             # doing necessary stuff, you know
-            conn = self.zen_conn
+            conn = spider.zen_conn
             cursor = conn.cursor()
 
             # updating articles
@@ -54,14 +56,14 @@ class ChannelPipeline:
             cursor.close()
 
         else:
-            db_ops.write_to_db(self.zen_conn, "channels", **channel_dict)  # write_to_db (channel)
-            channel_id = db_ops.read_from_db(self.zen_conn, "channels", "channel_id", where="url={}".format(
+            db_ops.write_to_db(spider.zen_conn, "channels", **channel_dict)  # write_to_db (channel)
+            channel_id = db_ops.read_from_db(spider.zen_conn, "channels", "channel_id", where="url={}".format(
                     channel_item["url"]))[0][0]
 
             # put articles into db
             for article in channel_item["articles"]:
                 article_dict = dict(vars(article), channel_id=channel_id)
-                db_ops.write_to_db(self.zen_conn, "articles", **article_dict)  # TODO write_to_db - article
+                db_ops.write_to_db(spider.zen_conn, "articles", **article_dict)  # TODO write_to_db - article
 
         del channel_dict
         del article_dict
