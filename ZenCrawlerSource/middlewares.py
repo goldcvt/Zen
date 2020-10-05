@@ -186,13 +186,18 @@ class IPNoRetryDownloaderMiddleware:  # i mean, we probably don't need retries d
         return None
 
     def process_response(self, request, response, spider):
-        spider.logger.warning(f"Request status is {response.status}")
+        spider.logger.warning(f"Response status is {response.status}")
         if response.url.find("zen.yandex.ru/id/") != -1:
             global chans_processed
             chans_processed += 1
             spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
                                   % (chans_processed, chans_processed / 3400))  # console log
-        return response
+        # 4xx errors handler
+        if response.status == 200:
+            return response
+        else:
+            request.meta['proxy'] = ''
+            return request
 
     def process_exception(self, request, exception, spider):
         try:
