@@ -51,8 +51,13 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': None,
+    'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': None,
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
-    'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 350,
+    'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
+    # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
+    # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
@@ -70,10 +75,10 @@ EXTENSIONS = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-    # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
-    'ZenCrawlerSource.pipelines.ChannelPipeline': 150
-}
+# ITEM_PIPELINES = {
+#     # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
+#     'ZenCrawlerSource.pipelines.ChannelPipeline': 150
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -91,6 +96,8 @@ AUTOTHROTTLE_DEBUG = False
 # Memory Debugger Ext SETTINGS
 MEMDEBUG_ENABLED = True
 
+RETRY_ENABLED = False
+
 # CloseSpider Ext SETTINGS - ANCHOR
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
 # пайплайне
@@ -99,7 +106,7 @@ CLOSESPIDER_ITEMCOUNT = 100
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'
 
-DOWNLOAD_TIMEOUT = 20
+DOWNLOAD_TIMEOUT = 10
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings

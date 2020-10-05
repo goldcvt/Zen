@@ -4,6 +4,7 @@ import datetime
 import re
 from ZenCrawlerSource.items import ArticleItem, ChannelItem
 import json
+from tqdm import tqdm
 
 non_arbitrage = ['instagram.com', 'twitter.com']
 
@@ -124,7 +125,7 @@ class ExampleSpider(scrapy.Spider):
 
     def parse(self, response):
 
-        for a in response.css("div.alphabet__list a.alphabet__item::attr(href)").getall():
+        for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
             if a != "media/zen/channels": # DONE теперь итерация правильная - TODO
                 yield response.follow(a, callback=self.parse_by_letter)
 
@@ -140,14 +141,17 @@ class ExampleSpider(scrapy.Spider):
         yield from response.follow_all(chans, callback=self.parse_channel) # just calls, no returns
 
     def parse_channel(self, response): # DONE перевели на классы - TODO
-        default_stats = response.css("div.desktop-channel-2-counter__value::text").getall() # DONE implemented PC UA TODO
+        default_stats = response.css("div.desktop-channel-2-counter__value::text").getall()
+        # DONE implemented PC UA TODO
         subs = int("".join(default_stats[0].get().split(" ")))
-        audience = int("".join(default_stats[1].get().split(" "))) # DONE return those! Items and item pipelines TODO
+        audience = int("".join(default_stats[1].get().split(" ")))
+        # DONE return those! Items and item pipelines TODO
         # TODO проверка is_crawled тут
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
         chan.if_crawled(self.zen_conn)
         urls = response.css("div.card-wrapper__inner a::attr(href)").getall()[:5]
+        # CHANGE x in [:x] for different amount of articles to be fetched
 
         for url in urls:
             if url.find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
@@ -179,13 +183,16 @@ class ExampleSpider(scrapy.Spider):
     def fetch_article(self, response, channel, total_articles):
         title = response.css("h1.article__title::text").get()
 
-        date = ExampleSpider.get_date(response.css("footer.article__statistics span.article-stat__date::text").get())
+        date = ExampleSpider.get_date(response.css("footer.article__statistics span.article-stat__date::text")
+                                      .get())
         # url = response.url
-        # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to get_reads or
+        # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to
+        #  get_reads or
         #     # TODO find a way to get actual reads and views
         #     art_id = "".join(url.split("-")[-1])
         #     author_id = "".join(url.split("/")[-2])
-        #     reads, views = response.follow(f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={art_id}" +
+        #     reads, views = response.follow(f"https://zen.yandex.ru/media-api/
+        #     publication-view-stat?publicationId={art_id}" +
         #                                    f"&publisherId={author_id}", callback=self.get_reads)
         # else:
         #
@@ -198,7 +205,7 @@ class ExampleSpider(scrapy.Spider):
         if len(channel.articles) == total_articles:
             channel.is_arbitrage(total_articles)
             yield ExampleSpider.itemize(channel)
-            # raise scrapy.exceptions.CloseSpider(reason='Test completed') TODO implement constraints
+        # raise scrapy.exceptions.CloseSpider(reason='Test completed') TODO implement constraints
         # TODO Fix this в целом плохой перевод в айтемы, ведь по сути у нас уже есть объекты нужные
 
     def get_reads(self, response):
@@ -233,7 +240,8 @@ class ExampleSpider(scrapy.Spider):
     def get_date(datestring):
         elements = datestring.lower().split(" ")
         final_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
-        if datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1: # yesterday, today, 3 days ago - всё тут)
+        if datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1:
+            # yesterday, today, 3 days ago - всё тут)
             months = ['january', 'february', 'march', 'april',
                       'may', 'june', 'july', 'august',
                       'september', 'october', 'november', 'december']
@@ -244,7 +252,7 @@ class ExampleSpider(scrapy.Spider):
             else:
                 final_date = datetime.datetime(int(elements[2]), month, int(elements[0]), 4, 20, 0, 0)
 
-        elif datestring.lower().find('today') != -1: # TODO добавить временные зоны, потому
+        elif datestring.lower().find('today') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
             final_date = datetime.datetime.now()
         elif datestring.lower().find('yesterday') != -1:
             tmp = datetime.datetime.now()
@@ -261,15 +269,17 @@ class ExampleSpider(scrapy.Spider):
         self.zen_conn.close()
         self.proxy_conn.close()
 
-    #return True, если всё нормально. Иначе false
+    # return True, если всё нормально. Иначе false
 
-# TODO если есть плашка "партнерская статья" - не арбитражная) Впрочем, это необязательно - мы несколько статей смотрим
+# TODO если есть плашка "партнерская статья" - не арбитражная)
+#  Впрочем, это необязательно - мы несколько статей смотрим
 
 class IPSpider(scrapy.Spider):
     name = "ips"
 
     def __init__(self):
-        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
+        # self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
+        pass
 
     start_urls = ["http://httpbin.org/ip"]
 
@@ -277,6 +287,9 @@ class IPSpider(scrapy.Spider):
         print(response.text)
 
     def closed(self, reason):
-        self.proxy_conn.close()
+        # self.proxy_conn.close()
         print("Closed connection with proxy_db")
+
+    # def errback_httpbin(self, failure):
+
 

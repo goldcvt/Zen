@@ -2,14 +2,16 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-
+from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
+from scrapy.utils.response import get_meta_refresh
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 from crawler_toolz import proxy_ops
 
 chans_processed = 0
+
 
 class ZencrawlersourceSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -59,6 +61,8 @@ class ZencrawlersourceSpiderMiddleware:
 
 
 class ZencrawlersourceDownloaderMiddleware:
+    # def __init__(self):
+    #     self.zen_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
     # passed objects.
@@ -74,11 +78,12 @@ class ZencrawlersourceDownloaderMiddleware:
         # Called for each request that goes through the downloader
         # middleware.
         # Для теста можно bad_checks = 2)) Тогда точно ошибка вылезет, заблэклистим и сменим
-        proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
-        proxy_string = proxy.get_address()
-        request.meta['proxy'] = proxy_string
         spider.logger.warning("Processing request...")
-        spider.logger.warning(f"Proxy is set to {proxy_string}")
+        if not request.meta['proxy']:
+            proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
+            proxy_string = proxy.get_address()
+            request.meta['proxy'] = proxy_string
+            spider.logger.warning(f"Proxy is set to {proxy_string}")
         # Must either:
         # - return None: continue processing this request
         # - or return a Response object
@@ -99,29 +104,105 @@ class ZencrawlersourceDownloaderMiddleware:
             global chans_processed
             chans_processed += 1
             spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
-                                  % (chans_processed, chans_processed/3400))    # console log
+                                  % (chans_processed, chans_processed / 3400))  # console log
         return response
 
-    def process_exception(self, request, exception, spider):  # TODO FIX нам нужно после каждого ретрая это вызывать)
-        # TODO сейчас не так, очевидно. Решается разборками с Retry Middleware, его стоит отключить или перенастроить
+    def process_exception(self, request, exception, spider):
         # см https://stackoverflow.com/questions/20805932/scrapy-retry-or-redirect-middleware
         # Called when a download handler or a process_request()
         # (from other downloader middleware) raises an exception.
         try:
-            if (request.meta['proxy'].find('https') == -1)and(request.meta['proxy'] != None)and(request.meta['proxy'] != ''):
-                request.meta['proxy'].replace('http', 'https')
-            else:
+            if request.meta['proxy']:
                 proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
-                # TODO очевидно, строчка выше не работает)) Принты и гугломашина в деле. Кажется, поправили -
-                # плохо был запрос к БД написан
-            proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
-            request.meta['proxy'] = proxy.get_address()
+            # proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
+            # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
+            request.meta['proxy'] = ''  # proxy.get_address()
         except KeyError:
-            self.process_request(request, spider)
+            pass
+        #   self.process_request(request, spider)
         # Must either:
         # - return None: continue processing this exception
         # - return a Response object: stops process_exception() chain
         # - return a Request object: stops process_exception() chain
+        return request
+
+    def spider_opened(self, spider):
+        spider.logger.info('Spider opened: %s' % spider.name)
+
+
+class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't need retries due to redirect so...
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls(crawler.settings)
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+
+    def process_request(self, request, spider):
+        if not request.meta['proxy']:
+            request.meta['proxy'] = 'http://228.228.228.228:1488'
+        return None
+
+    def process_response(self, request, response, spider): # only if we need redirectual retries
+        url = response.url
+        if response.status in [301, 302, 307]:
+            spider.logger.warning(f"We're being redirected with server-side redir {url}")
+            reason = 'redirect %d' % response.status
+            return self._retry(request, reason, spider) or response
+        interval, redirect_url = get_meta_refresh(response)
+        # handle meta redirect
+        if redirect_url:
+            spider.logger.warning(f"We're being redirected with META redir {url}")
+            reason = 'meta'
+            return self._retry(request, reason, spider) or response
+        return response
+
+    def process_exception(self, request, exception, spider): # will always pop if no retry middleware is enabled
+        fine_proxy = 'http://159.203.61.169:8080'
+        request.meta['proxy'] = fine_proxy
+        print(f"Connected to {fine_proxy}")
+        # allows infinite loops. but still, does the thing we desired
+        return request
+
+    def spider_opened(self, spider):
+        spider.logger.info('Spider opened: %s' % spider.name)
+
+
+class IPNoRetryDownloaderMiddleware:  # i mean, we probably don't need retries due to redirect so...
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls()
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+
+    def process_request(self, request, spider):
+        spider.logger.warning("Processing request...")
+        if not request.meta['proxy']:
+            proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
+            proxy_string = proxy.get_address()
+            request.meta['proxy'] = proxy_string
+            spider.logger.warning(f"Proxy is set to {proxy_string}")
+        return None
+
+    def process_response(self, request, response, spider):
+        spider.logger.warning(f"Request status is {response.status}")
+        if response.url.find("zen.yandex.ru/id/") != -1:
+            global chans_processed
+            chans_processed += 1
+            spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
+                                  % (chans_processed, chans_processed / 3400))  # console log
+        return response
+
+    def process_exception(self, request, exception, spider):
+        try:
+            if request.meta['proxy']:
+                proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
+            # proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
+            # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
+            request.meta['proxy'] = ''  # proxy.get_address()
+        except KeyError:
+            pass
         return request
 
     def spider_opened(self, spider):
