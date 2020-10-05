@@ -277,7 +277,7 @@ class IPSpider(scrapy.Spider):
     name = "ips"
 
     def __init__(self):
-        # self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
+        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
         pass
 
     start_urls = ["http://httpbin.org/ip"]
@@ -286,7 +286,7 @@ class IPSpider(scrapy.Spider):
         print(response.text)
 
     def closed(self, reason):
-        # self.proxy_conn.close()
+        self.proxy_conn.close()
         print("Closed connection with proxy_db")
 
     # def errback_httpbin(self, failure):
