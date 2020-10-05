@@ -178,7 +178,7 @@ class IPNoRetryDownloaderMiddleware:  # i mean, we probably don't need retries d
 
     def process_request(self, request, spider):
         spider.logger.warning("Processing request...")
-        if request.meta['proxy'] == '':
+        if request.meta['proxy'] == '' or request.meta['proxy']:
             proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
             proxy_string = proxy.get_address()
             request.meta['proxy'] = proxy_string
@@ -196,7 +196,7 @@ class IPNoRetryDownloaderMiddleware:  # i mean, we probably don't need retries d
 
     def process_exception(self, request, exception, spider):
         try:
-            if request.meta['proxy'] != '':
+            if request.meta['proxy'] != '' or not request.meta['proxy']:
                 proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
             # proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
