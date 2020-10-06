@@ -60,7 +60,7 @@ class ZencrawlersourceSpiderMiddleware:
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class ZencrawlersourceDownloaderMiddleware:
+class ZencrawlersourceDownloaderMiddlewareArchive:
     # def __init__(self):
     #     self.zen_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
     # Not all methods need to be defined. If a method is not defined,
@@ -168,7 +168,11 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class IPNoRetryDownloaderMiddleware:  # i mean, we probably don't need retries due to redirect so...
+# class IPNoRetryDownloaderMiddleware: - deprecated
+class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retries due to redirect so...
+    def __init__(self):  # add connection to db
+        pass
+
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.

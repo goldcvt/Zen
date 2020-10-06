@@ -277,7 +277,7 @@ class IPSpider(scrapy.Spider):
     name = "ips"
 
     def __init__(self):
-        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
+        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "post_gres", "127.0.0.1")
         pass
 
     start_urls = ["http://httpbin.org/ip"]
