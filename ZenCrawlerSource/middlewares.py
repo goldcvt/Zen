@@ -170,8 +170,8 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
 
 # class IPNoRetryDownloaderMiddleware: - deprecated
 class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retries due to redirect so...
-    def __init__(self):  # add connection to db
-        pass
+    # def __init__(self):  # add connection to db
+    #     pass
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -199,7 +199,9 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         # 4xx errors handler
         if response.status == 200:
             return response
-        else:
+        else:  # bug somewhere here. Actually, the problem is, we don't blacklist that shit. Fixed...
+            if request.status in [407, 409, 500, 501, 502, 503, 508]:
+                proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
             request.meta['proxy'] = ''
             return request
 
