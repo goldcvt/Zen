@@ -286,9 +286,11 @@ class IPSpider(scrapy.Spider):
         print(response.text)
 
     def closed(self, reason):
+        print("Connection status (pre-closing, normal):")
+        print(self.proxy_conn.status)
         self.proxy_conn.close()
         print("Closed connection with proxy_db")
-
+        print(self.proxy_conn.status)
     # def errback_httpbin(self, failure):
 
 
