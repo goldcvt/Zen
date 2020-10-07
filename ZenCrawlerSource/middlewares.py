@@ -5,6 +5,7 @@
 from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
+from psycopg2 import InterfaceError
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -80,7 +81,7 @@ class ZencrawlersourceDownloaderMiddlewareArchive:
         # Для теста можно bad_checks = 2)) Тогда точно ошибка вылезет, заблэклистим и сменим
         spider.logger.warning("Processing request...")
         if request.meta['proxy'] == '':
-            proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
+            proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             proxy_string = proxy.get_address()
             request.meta['proxy'] = proxy_string
             spider.logger.warning(f"Proxy is set to {proxy_string}")
@@ -113,8 +114,8 @@ class ZencrawlersourceDownloaderMiddlewareArchive:
         # (from other downloader middleware) raises an exception.
         try:
             if request.meta['proxy'] != '':
-                proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
-            # proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
+                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+            # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
             request.meta['proxy'] = ''  # proxy.get_address()
         except KeyError:
@@ -170,24 +171,37 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
 
 # class IPNoRetryDownloaderMiddleware: - deprecated
 class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retries due to redirect so...
-    # def __init__(self):  # add connection to db
-    #     pass
+    def __init__(self):  # added connection to db
+        self.db = "proxy_db"
+        self.usr = "postgres"
+        self.pswd = "postgres"
+        self.hst = "127.0.0.1"
 
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
-        s = cls()
+        s = cls()   # also calls __init__
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
+    def open_spider(self, spider):
+        self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+
+    def close_spider(self, spider):
+        self.conn.close()
+
     def process_request(self, request, spider):
-        spider.logger.warning("Processing request...")
-        if request.meta['proxy'] == '' or not request.meta['proxy']:
-            proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
-            proxy_string = proxy.get_address()
-            request.meta['proxy'] = proxy_string
-            spider.logger.warning(f"Proxy is set to {proxy_string}")
-        return None
+        try:
+            spider.logger.warning("Processing request...")
+            if request.meta['proxy'] == '' or not request.meta['proxy']:
+                proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                proxy_string = proxy.get_address()
+                request.meta['proxy'] = proxy_string
+                spider.logger.warning(f"Proxy is set to {proxy_string}")
+            return None
+        except InterfaceError:
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            return request
 
     def process_response(self, request, response, spider):
         spider.logger.warning(f"Response status is {response.status}")
@@ -196,20 +210,31 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             chans_processed += 1
             spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
                                   % (chans_processed, chans_processed / 3400))  # console log
-        # 4xx errors handler
-        if response.status == 200:
-            return response
-        else:  # bug somewhere here. Actually, the problem is, we don't blacklist that shit. Fixed...
-            if request.status in [407, 409, 500, 501, 502, 503, 508]:
-                proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
-            request.meta['proxy'] = ''
-            return request
+            # 4xx errors handler
+            if response.status == 200:
+                return response
+            elif response.status in [407, 409, 500, 501, 502, 503, 508]:
+
+                try: # handles the connection in case it fails
+                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                except InterfaceError:
+                    self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+
+                request.meta['proxy'] = ''
+                return request
+            elif response.status == 404:  # TODO посмотреть тщательнее
+                return None
 
     def process_exception(self, request, exception, spider):
         try:
-            if request.meta['proxy'] != '' or request.meta['proxy']:
-                proxy_ops.Proxy.get_from_string(spider.proxy_conn, request.meta['proxy']).blacklist(spider.proxy_conn)
-            # proxy = proxy_ops.Proxy.get_type_proxy(spider.proxy_conn, 0, 0)
+            if request.meta['proxy'] != '' or request.meta['proxy']:  # if there's a proxy, it's a bad one
+                try:  # just in case connection with db fails. Next line = ban proxy
+                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                except InterfaceError:
+                    self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+            # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
             request.meta['proxy'] = ''  # proxy.get_address()
         except KeyError:  # always getting triggered. TODO rework rotation logic around this

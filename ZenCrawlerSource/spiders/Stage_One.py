@@ -5,6 +5,7 @@ import re
 from ZenCrawlerSource.items import ArticleItem, ChannelItem
 import json
 from tqdm import tqdm
+from psycopg2 import InterfaceError
 
 non_arbitrage = ['instagram.com', 'twitter.com']
 
@@ -120,7 +121,7 @@ class ExampleSpider(scrapy.Spider):
     start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
     def __init__(self):
-        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
+        # self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
         self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
 
     def parse(self, response):
@@ -148,7 +149,11 @@ class ExampleSpider(scrapy.Spider):
         # DONE return those! Items and item pipelines TODO
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
-        chan.if_crawled(self.zen_conn)
+        try:
+            chan.if_crawled(self.zen_conn)
+        except InterfaceError:
+            self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
+            chan.if_crawled(self.zen_conn)
         urls = response.css("div.card-wrapper__inner a::attr(href)").getall()[:5]
         # CHANGE x in [:x] for different amount of articles to be fetched
 
@@ -266,7 +271,7 @@ class ExampleSpider(scrapy.Spider):
     
     def closed(self, reason):
         self.zen_conn.close()
-        self.proxy_conn.close()
+    #   self.proxy_conn.close()
 
     # return True, если всё нормально. Иначе false
 
@@ -276,21 +281,17 @@ class ExampleSpider(scrapy.Spider):
 class IPSpider(scrapy.Spider):
     name = "ips"
 
-    def __init__(self):
-        self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
-        pass
+    # def __init__(self):
+    #     self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
 
     start_urls = ["http://httpbin.org/ip"]
 
     def parse(self, response):
         print(response.text)
 
-    def closed(self, reason):
-        print("Connection status (pre-closing, normal):")
-        print(self.proxy_conn.status)
-        self.proxy_conn.close()
-        print("Closed connection with proxy_db")
-        print(self.proxy_conn.status)
-    # def errback_httpbin(self, failure):
+    # def closed(self, reason):
+    #     self.proxy_conn.close()
+    #     print("Closed connection with proxy_db")
 
+    # def errback_httpbin(self, failure):
 
