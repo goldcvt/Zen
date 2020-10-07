@@ -176,6 +176,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         self.usr = "postgres"
         self.pswd = "postgres"
         self.hst = "127.0.0.1"
+        self.conn = None
 
     @classmethod
     def from_crawler(cls, crawler):
