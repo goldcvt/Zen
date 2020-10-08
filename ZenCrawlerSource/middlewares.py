@@ -187,6 +187,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
 
     def open_spider(self, spider):
         self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+        print(f"self.conn established: {self.conn}" ) # TODO that's a new ONE! check it
 
     def close_spider(self, spider):
         self.conn.close()
