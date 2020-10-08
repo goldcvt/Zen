@@ -190,6 +190,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
 
     def close_spider(self, spider):
         self.conn.close()  # можно сигналом закрывать соединение
+        spider.logger.warning(f"self.conn closed")
 
     def process_request(self, request, spider):
         spider.logger.warning("Processing request...")
