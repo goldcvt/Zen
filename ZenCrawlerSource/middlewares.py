@@ -196,6 +196,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         try:
             spider.logger.warning("Processing request...")
             if request.meta['proxy'] == '' or not request.meta['proxy']:
+                spider.logger.warning("Tryin' to connect")
                 proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
                 proxy_string = proxy.get_address()
                 request.meta['proxy'] = proxy_string
