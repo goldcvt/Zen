@@ -236,19 +236,22 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
                 raise AttributeError
 
             # TODO call a db, if it fails, we'll have a reason to call the exception)
+
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
             request.meta['proxy'] = ''
             spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
+
         except InterfaceError:
             spider.logger.warning("Could not connect to db, conn closed, re-establishing")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-            proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-            request.meta['proxy'] = ''
+            if request.meta['proxy'] != '':
+                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                request.meta['proxy'] = ''
+
         except AttributeError: # could lead to more complicated bugs, but it'll do just fine if works
             spider.logger.warning("finally, AttributeError")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-            proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-            request.meta['proxy'] = ''
+
         return request
 
     def spider_opened(self, spider):
