@@ -186,8 +186,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         return s
 
     def open_spider(self, spider): # isn't being called upon spider's opening))
-        self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-        spider.logger.warning(f"self.conn established: {self.conn}" ) # TODO that's a new ONE! check it
+        spider.logger.warning(f"self.conn established: {self.conn}") # TODO that's a new ONE! check it
 
     def close_spider(self, spider):
         self.conn.close()  # можно сигналом закрывать соединение
@@ -228,10 +227,8 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
                 spider.logger.warning(f"{self.conn.closed}")
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
-            if not self.conn:
+            elif not self.conn:
                 raise AttributeError
-
-            # TODO call a db, if it fails, we'll have a reason to raise the exception)
 
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
             request.meta['proxy'] = ''
