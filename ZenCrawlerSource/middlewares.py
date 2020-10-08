@@ -227,7 +227,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         try:
             if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
                 spider.logger.warning("Processing exception, connection fails NOW!")
-                self.conn.closed() # TODO DELETE AFTER TESTS
+                self.conn.close()  # TODO DELETE AFTER TESTS
                 proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 request.meta['proxy'] = ''  # proxy.get_address()
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
