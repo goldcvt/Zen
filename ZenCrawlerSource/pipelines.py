@@ -1,6 +1,7 @@
 from crawler_toolz import db_ops
 import datetime
 from psycopg2 import InterfaceError
+from scrapy import signals
 
 
 # Define your item pipelines here
@@ -26,16 +27,23 @@ class ChannelPipeline:
         self.usr = "obama"
         self.pswd = "obama"
         self.hst = "127.0.0.1"
+        self.conn = None
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls()  # also calls __init__
+        # This method is used by Scrapy to create your spiders.
+        s = cls()  # also calls __init__
+        crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
+        crawler.signals.connect(s.close_spider, signal=signals.spider_closed)
+        return s
 
     def open_spider(self, spider):
         self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+        spider.logger.info(f"Opened connection with zen_copy: {self.conn}")
 
     def close_spider(self, spider):
         self.conn.close()
+        spider.logger.info(f"Closed connection with zen_copy: {self.conn}")
 
     def process_item(self, channel_item, spider):
         try:
@@ -83,6 +91,9 @@ class ChannelPipeline:
             del article_dict
             return channel_item  # TODO CHANGE TO DELETION?
 
-        except InterfaceError or AttributeError:  # questionable, needs testing (this NameError could get us some trouble :))
+        except InterfaceError:
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            self.process_item(channel_item, spider)
+        except AttributeError:
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(channel_item, spider)
