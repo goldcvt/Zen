@@ -209,16 +209,16 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             chans_processed += 1
             spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
                                   % (chans_processed, chans_processed / 3400))  # console log
-            # 4xx errors handler
-            if response.status == 200:
-                return response
-            elif response.status in [407, 409, 500, 501, 502, 503, 508]:
-                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                request.meta['proxy'] = ''
-                return request
-            elif response.status == 404:  # TODO посмотреть тщательнее
-                # return None  # TODO causes errors, fix that
-                return response
+        # 4xx errors handler
+        if response.status == 200:
+            return response
+        elif response.status in [407, 409, 500, 501, 502, 503, 508]:
+            proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+            request.meta['proxy'] = ''
+            return request
+        elif response.status == 404:  # TODO посмотреть тщательнее
+            # return None  # TODO causes errors, fix that
+            return response
 
     def process_exception(self, request, exception, spider):
         try:
