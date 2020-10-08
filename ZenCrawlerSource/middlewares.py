@@ -195,7 +195,6 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
     def process_request(self, request, spider):
         spider.logger.warning("Processing request...")
         if request.meta['proxy'] == '' or not request.meta['proxy']:
-            # spider.logger.warning(f"UA is {request.headers['User-Agent']}") # doesn't work for some reason :)
             proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             proxy_string = proxy.get_address()
             request.meta['proxy'] = proxy_string
@@ -217,15 +216,15 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
                 request.meta['proxy'] = ''
                 return request
             elif response.status == 404:  # TODO посмотреть тщательнее
-                return None
+                # return None  # TODO causes errors, fix that
+                return response
 
     def process_exception(self, request, exception, spider):
         try:
             if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
-                spider.logger.warning("Processing exception, connection fails NOW!")
                 proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 request.meta['proxy'] = ''  # proxy.get_address()
-                spider.logger.warning(f"{self.conn.closed}")
+                # spider.logger.warning(f"{self.conn.closed}") # returns 0 or 1
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
             elif not self.conn:
