@@ -176,7 +176,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         self.usr = "postgres"
         self.pswd = "postgres"
         self.hst = "127.0.0.1"
-        self.conn = None
+        self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -193,12 +193,8 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         self.conn.close()  # можно сигналом закрывать соединение
 
     def process_request(self, request, spider):
-        # классический трю с булевским глобальным флагом и его сменой?) для отличия начала спайдера от
-        # любого другого момента
         spider.logger.warning("Processing request...")
-        spider.logger.warning(f"dbname is: {self.db}")
         if request.meta['proxy'] == '' or not request.meta['proxy']:
-            spider.logger.warning("Tryin' to connect")
             # spider.logger.warning(f"UA is {request.headers['User-Agent']}") # doesn't work for some reason :)
             proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             proxy_string = proxy.get_address()
@@ -227,15 +223,15 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         try:
             if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
                 spider.logger.warning("Processing exception, connection fails NOW!")
-                self.conn.close()  # TODO DELETE AFTER TESTS
                 proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 request.meta['proxy'] = ''  # proxy.get_address()
+                spider.logger.warning(f"{self.conn.closed}")
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
             if not self.conn:
                 raise AttributeError
 
-            # TODO call a db, if it fails, we'll have a reason to call the exception)
+            # TODO call a db, if it fails, we'll have a reason to raise the exception)
 
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
             request.meta['proxy'] = ''
