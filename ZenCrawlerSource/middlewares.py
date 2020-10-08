@@ -196,21 +196,16 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
     def process_request(self, request, spider):
         # классический трю с булевским глобальным флагом и его сменой?) для отличия начала спайдера от
         # любого другого момента
-        try:
-            spider.logger.warning("Processing request...")
-            spider.logger.warning(f"dbname is: {self.db}")
-            if request.meta['proxy'] == '' or not request.meta['proxy']:
-                spider.logger.warning("Tryin' to connect")
-                # spider.logger.warning(f"UA is {request.headers['User-Agent']}") # doesn't work for some reason :)
-                proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
-                proxy_string = proxy.get_address()
-                request.meta['proxy'] = proxy_string
-                spider.logger.warning(f"Proxy is set to {proxy_string}")
-            return None
-        except InterfaceError or AttributeError: #could lead to more complicated bugs, but y'know it'll do just fine if works
-            spider.logger.warning("Could not connect to db")
-            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-            return request
+        spider.logger.warning("Processing request...")
+        spider.logger.warning(f"dbname is: {self.db}")
+        if request.meta['proxy'] == '' or not request.meta['proxy']:
+            spider.logger.warning("Tryin' to connect")
+            # spider.logger.warning(f"UA is {request.headers['User-Agent']}") # doesn't work for some reason :)
+            proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+            proxy_string = proxy.get_address()
+            request.meta['proxy'] = proxy_string
+            spider.logger.warning(f"Proxy is set to {proxy_string}")
+        return None
 
     def process_response(self, request, response, spider):
         spider.logger.warning(f"Response status is {response.status}")
@@ -223,13 +218,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             if response.status == 200:
                 return response
             elif response.status in [407, 409, 500, 501, 502, 503, 508]:
-
-                try: # handles the connection in case it fails
-                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                except InterfaceError or AttributeError:
-                    self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-
+                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 request.meta['proxy'] = ''
                 return request
             elif response.status == 404:  # TODO посмотреть тщательнее
@@ -238,17 +227,25 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
     def process_exception(self, request, exception, spider):
         try:
             if request.meta['proxy'] != '' or request.meta['proxy']:  # if there's a proxy, it's a bad one
-                try:  # just in case connection with db fails. Next line = ban proxy
-                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                except InterfaceError or AttributeError:
-                    self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                spider.logger.warning("Processing exception, connection fails NOW!")
+                self.conn.closed()
+                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
             request.meta['proxy'] = ''  # proxy.get_address()
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
             request.meta['proxy'] = ''
             spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
+        except InterfaceError:  # could lead to more complicated bugs, but it'll do just fine if works. Maybe scrapy doesn't
+            spider.logger.warning("Could not connect to db, conn closed, re-establishing")
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+            request.meta['proxy'] = ''
+        except AttributeError:
+            spider.logger.warning("finally, AttributeError")
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+            request.meta['proxy'] = ''
         return request
 
     def spider_opened(self, spider):
