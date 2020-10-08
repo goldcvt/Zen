@@ -207,7 +207,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
                 request.meta['proxy'] = proxy_string
                 spider.logger.warning(f"Proxy is set to {proxy_string}")
             return None
-        except InterfaceError or NameError or NameError: #could lead to more complicated bugs, but y'know it'll do just fine if works
+        except InterfaceError or NameError: #could lead to more complicated bugs, but y'know it'll do just fine if works
             spider.logger.warning("Could not connect to db")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             return request
