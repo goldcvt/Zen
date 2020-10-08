@@ -6,11 +6,10 @@ from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
-from scrapy_user_agents import user_agent_picker
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
-from crawler_toolz import proxy_ops
+from crawler_toolz import proxy_ops, db_ops
 
 chans_processed = 0
 
@@ -235,15 +234,17 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
             if not self.conn:
                 raise AttributeError
+
+            # TODO call a db, if it fails, we'll have a reason to call the exception)
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
             request.meta['proxy'] = ''
             spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
-        except InterfaceError:  # could lead to more complicated bugs, but it'll do just fine if works. Maybe scrapy doesn't
+        except InterfaceError:
             spider.logger.warning("Could not connect to db, conn closed, re-establishing")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
             request.meta['proxy'] = ''
-        except AttributeError:
+        except AttributeError: # could lead to more complicated bugs, but it'll do just fine if works
             spider.logger.warning("finally, AttributeError")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
