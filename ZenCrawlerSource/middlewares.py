@@ -226,13 +226,15 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
 
     def process_exception(self, request, exception, spider):
         try:
-            if request.meta['proxy'] != '' or request.meta['proxy']:  # if there's a proxy, it's a bad one
+            if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
                 spider.logger.warning("Processing exception, connection fails NOW!")
-                self.conn.closed()
+                self.conn.closed() # TODO DELETE AFTER TESTS
                 proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                request.meta['proxy'] = ''  # proxy.get_address()
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
-            request.meta['proxy'] = ''  # proxy.get_address()
+            if not self.conn:
+                raise AttributeError
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
             request.meta['proxy'] = ''
             spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
