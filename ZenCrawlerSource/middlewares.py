@@ -6,6 +6,7 @@ from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
+from scrapy_user_agents import user_agent_picker
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -185,18 +186,22 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
-    def open_spider(self, spider):
+    def open_spider(self, spider): # isn't being called upon spider's opening))
         self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
         spider.logger.warning(f"self.conn established: {self.conn}" ) # TODO that's a new ONE! check it
 
     def close_spider(self, spider):
-        self.conn.close()
+        self.conn.close()  # можно сигналом закрывать соединение
 
     def process_request(self, request, spider):
+        # классический трю с булевским глобальным флагом и его сменой?) для отличия начала спайдера от
+        # любого другого момента
         try:
             spider.logger.warning("Processing request...")
+            spider.logger.warning(f"dbname is: {self.db}")
             if request.meta['proxy'] == '' or not request.meta['proxy']:
                 spider.logger.warning("Tryin' to connect")
+                spider.logger.warning(f"UA is {request.headers['User-Agent']}")
                 proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
                 proxy_string = proxy.get_address()
                 request.meta['proxy'] = proxy_string
