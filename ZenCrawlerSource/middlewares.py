@@ -182,7 +182,8 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
         s = cls()   # also calls __init__
-        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
+        crawler.signals.connect(s.close_spider, signal=signals.spider_closed)
         return s
 
     def open_spider(self, spider): # isn't being called upon spider's opening))
