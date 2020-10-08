@@ -207,7 +207,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
                 request.meta['proxy'] = proxy_string
                 spider.logger.warning(f"Proxy is set to {proxy_string}")
             return None
-        except InterfaceError or NameError: #could lead to more complicated bugs, but y'know it'll do just fine if works
+        except InterfaceError or AttributeError: #could lead to more complicated bugs, but y'know it'll do just fine if works
             spider.logger.warning("Could not connect to db")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             return request
@@ -226,7 +226,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
 
                 try: # handles the connection in case it fails
                     proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                except InterfaceError or NameError:
+                except InterfaceError or AttributeError:
                     self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
                     proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
 
@@ -240,7 +240,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             if request.meta['proxy'] != '' or request.meta['proxy']:  # if there's a proxy, it's a bad one
                 try:  # just in case connection with db fails. Next line = ban proxy
                     proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                except InterfaceError or NameError:
+                except InterfaceError or AttributeError:
                     self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
                     proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)

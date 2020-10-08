@@ -83,6 +83,6 @@ class ChannelPipeline:
             del article_dict
             return channel_item  # TODO CHANGE TO DELETION?
 
-        except InterfaceError or NameError:  # questionable, needs testing (this NameError could get us some trouble :))
+        except InterfaceError or AttributeError:  # questionable, needs testing (this NameError could get us some trouble :))
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(channel_item, spider)
