@@ -9,7 +9,7 @@ from psycopg2 import InterfaceError
 
 # подавляет тупые строчки с device type incompatible
 import logging
-logging.getLogger("scrapy-user-agents").setLevel(logging.DEBUG)
+logging.getLogger("scrapy_user_agents.user_agent_picker").setLevel(logging.DEBUG)
 
 non_arbitrage = ['instagram.com', 'twitter.com']
 
