@@ -93,6 +93,8 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 32.0
 # Enable showing throttling stats for every response received:
 AUTOTHROTTLE_DEBUG = False
 
+HTTPERROR_ALLOWED_CODES = []  # actually, spider doesn't get non-200 responses to parse, downloader still works tho
+
 # Memory Debugger Ext SETTINGS
 MEMDEBUG_ENABLED = True
 
