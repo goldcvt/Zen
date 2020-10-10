@@ -6,6 +6,9 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+# подавляет тупые строчки с device type incompatible
+import logging
+logging.getLogger("scrapy_user_agents.user_agent_picker").setLevel(logging.DEBUG)
 
 BOT_NAME = 'ZenCrawlerSource'
 
