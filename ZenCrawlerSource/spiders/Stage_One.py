@@ -7,6 +7,10 @@ import json
 from tqdm import tqdm
 from psycopg2 import InterfaceError
 
+# подавляет тупые строчки с device type incompatible
+import logging
+logging.getLogger("scrapy-user-agents").setLevel(logging.DEBUG)
+
 non_arbitrage = ['instagram.com', 'twitter.com']
 
 # class Article():
