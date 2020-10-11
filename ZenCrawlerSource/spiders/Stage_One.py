@@ -286,7 +286,7 @@ class FirstLevelSpider(scrapy.Spider):
     # start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
     def start_requests(self):
-        url = ["https://zen.yandex.ru/media/zen/channels"]
+        url = "https://zen.yandex.ru/media/zen/channels"
         yield scrapy.Request(url=url, callback=self.parse, dont_filter=False)
 
     def parse(self, response): # dont_filter=True is applied to itself for some reason
