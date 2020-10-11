@@ -6,6 +6,7 @@ from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
+import traceback
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -233,6 +234,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
                 raise AttributeError
 
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
+            traceback.print_exc()
             request.meta['proxy'] = ''
             spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
 
