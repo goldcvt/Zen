@@ -278,6 +278,24 @@ class ExampleSpider(scrapy.Spider):
 # TODO если есть плашка "партнерская статья" - не арбитражная)
 #  Впрочем, это необязательно - мы несколько статей смотрим
 
+
+class FirstLevelSpider(scrapy.Spider):
+    name = "level1"
+
+    allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
+    start_urls = ["https://zen.yandex.ru/media/zen/channels"]
+
+    def parse(self, response):
+        for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
+            if a != "media/zen/channels":  # DONE теперь итерация правильная - TODO
+                self.logger.warning("PArsing letter: " + a)
+                yield response.follow(a, callback=self.parse_by_letter, dont_filter=True)
+
+    def parse_by_letter(self, response):
+        channel_top = response.css("a.channel-item__link").get()
+        self.logger.warning("Page-top channel url: " + channel_top)
+
+
 class TestSpider(scrapy.Spider):
     name = "zentest"
 

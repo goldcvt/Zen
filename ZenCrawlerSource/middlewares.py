@@ -234,7 +234,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
                 raise AttributeError
 
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
-            traceback.print_exc()
+            # traceback.print_exc()
             request.meta['proxy'] = ''
             spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
 
@@ -249,7 +249,8 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             spider.logger.warning("finally, AttributeError")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
 
-        return request
+        return request # такое чувство, что вот здесь хуйня фильтрует лишнего. типа когда снимаешь фильтры,
+        # запросы норм идут
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
