@@ -74,7 +74,7 @@ EXTENSIONS = {
     'scrapy.extensions.memdebug.MemoryDebugger': 300
 }
 
-DUPEFILTER_DEBUG = True
+DUPEFILTER_DEBUG = False
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
