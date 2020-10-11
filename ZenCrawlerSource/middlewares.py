@@ -202,7 +202,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             proxy_string = proxy.get_address()
             request.meta['proxy'] = proxy_string
             spider.logger.warning(f"Proxy is set to {proxy_string}")
-        return None
+        return None # TODO удостовериться, что нужно возвращать именно это
 
     def process_response(self, request, response, spider):
         spider.logger.warning(f"Response status is {response.status}")

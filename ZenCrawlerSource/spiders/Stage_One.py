@@ -283,9 +283,13 @@ class FirstLevelSpider(scrapy.Spider):
     name = "level1"
 
     allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
-    start_urls = ["https://zen.yandex.ru/media/zen/channels"]
+    # start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
-    def parse(self, response):
+    def start_requests(self):
+        url = ["https://zen.yandex.ru/media/zen/channels"]
+        yield scrapy.Request(url=url, callback=self.parse, dont_filter=False)
+
+    def parse(self, response): # dont_filter=True is applied to itself for some reason
         for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
             if a != "media/zen/channels":  # DONE теперь итерация правильная - TODO
                 self.logger.warning("PArsing letter: " + a)
