@@ -47,27 +47,27 @@ class ChannelPipeline:
         self.conn.close()
         spider.logger.info(f"Closed connection with zen_copy: {self.conn}")
 
-    def process_item(self, channel_item, spider):
-        # if isinstance(channel_item, ChannelItem):  # i'm probably paranoid
+    def process_item(self, item, spider):
+        # if isinstance(item, ChannelItem):  # i'm probably paranoid
         try:
             spider.logger.info("ITEM IS IN PIPELINE, PORCESSING...")
-            channel_dict = channel_item
+            channel_dict = item
             del channel_dict["articles"]
             del channel_dict["is_crawled"]
 
-            if channel_item["is_crawled"]:
-                channel_item["last_checked"] = datetime.datetime.now()
+            if item["is_crawled"]:
+                item["last_checked"] = datetime.datetime.now()
                 # doing necessary stuff, you know
                 conn = self.conn
                 cursor = conn.cursor()
 
                 # updating articles
-                for article in channel_item["articles"]:
+                for article in item["articles"]:
                     article_dict = dict(vars(article))
                     request = "UPDATE articles SET"
                     for key in article_dict.keys():
                         request += " {} = {}".format(key, article_dict[key])
-                    request += " WHERE channel_id = {};".format(channel_item["is_crawled"])
+                    request += " WHERE channel_id = {};".format(item["is_crawled"])
                     cursor.execute(request)
                     conn.commit()
 
@@ -75,7 +75,7 @@ class ChannelPipeline:
                 request = "UPDATE channels SET"
                 for key in channel_dict.keys():
                     request += " {} = {}".format(key, channel_dict[key])
-                request += " WHERE url = {}".format(channel_item["url"])
+                request += " WHERE url = {}".format(item["url"])
 
                 cursor.execute(request)
                 conn.commit()
@@ -84,10 +84,10 @@ class ChannelPipeline:
             else:
                 db_ops.write_to_db(self.conn, "channels", **channel_dict)  # write_to_db (channel)
                 channel_id = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url={}".format(
-                        channel_item["url"]))[0][0]
+                        item["url"]))[0][0]
 
                 # put articles into db
-                for article in channel_item["articles"]:
+                for article in item["articles"]:
                     article_dict = dict(vars(article), channel_id=channel_id)
                     db_ops.write_to_db(self.conn, "articles", **article_dict)  # TODO write_to_db - article
 
@@ -97,15 +97,15 @@ class ChannelPipeline:
             #     spider.logger.info(channel_dict)
             # if article_dict:
             #     print(article_dict)
-            return channel_item  # TODO CHANGE TO DELETION?
+            return item  # TODO CHANGE TO DELETION?
 
         except InterfaceError:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-            self.process_item(channel_item, spider)
+            self.process_item(item, spider)
         except AttributeError:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-            self.process_item(channel_item, spider)
+            self.process_item(item, spider)
         # else:
-        #     return channel_item
+        #     return item
