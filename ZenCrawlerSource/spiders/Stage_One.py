@@ -295,7 +295,7 @@ class TestSpider(scrapy.Spider):
         while channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
             self.parse_from_page(response)
             next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()[-1]
-            yield response.follow(next_page, callback=self.parse_by_letterPro)
+            yield response.follow(next_page, callback=self.parse_by_letter)
 
     def parse_from_page(self, response):
         chans = response.css("a.channel-item__link::attr(href)").getall()
