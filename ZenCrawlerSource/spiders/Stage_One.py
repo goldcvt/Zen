@@ -300,6 +300,8 @@ class TestSpider(scrapy.Spider):
     def parse_from_page(self, response):
         chans = response.css("a.channel-item__link::attr(href)").getall()
         self.logger.warning(chans)
+        with open('chans.txt', 'a') as f:
+            f.write(chans)
 
 
 class IPSpider(scrapy.Spider):
