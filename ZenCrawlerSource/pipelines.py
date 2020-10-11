@@ -2,6 +2,7 @@ from crawler_toolz import db_ops
 import datetime
 from psycopg2 import InterfaceError
 from scrapy import signals
+from ZenCrawlerSource.items import ChannelItem
 
 
 # Define your item pipelines here
@@ -18,7 +19,8 @@ class ZencrawlersourcePipeline:
     def process_item(self, item, spider):
         return item
 
-# DONE TODO написать исправлялку, если соединение с БД наебнется
+# DONE написать исправлялку, если соединение с БД наебнется
+
 
 class ChannelPipeline:
 
@@ -46,6 +48,7 @@ class ChannelPipeline:
         spider.logger.info(f"Closed connection with zen_copy: {self.conn}")
 
     def process_item(self, channel_item, spider):
+        # if isinstance(channel_item, ChannelItem):  # i'm probably paranoid
         try:
             spider.logger.info("ITEM IS IN PIPELINE, PORCESSING...")
             channel_dict = channel_item
@@ -104,3 +107,5 @@ class ChannelPipeline:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(channel_item, spider)
+        # else:
+        #     return channel_item
