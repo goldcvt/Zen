@@ -216,8 +216,8 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
             request.meta['proxy'] = ''
             return request
-        elif response.status == 404:  # TODO посмотреть тщательнее
-            # return None  # TODO causes errors, fix that
+        else: # то есть нужно по-хорошему тестить уже на дзенчике, вдруг умники с яндекса
+            # отдадут вечный 3хх или 404) ну посмотрим, посмотрим
             return response
 
     def process_exception(self, request, exception, spider):
