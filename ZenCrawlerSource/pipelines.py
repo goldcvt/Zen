@@ -47,6 +47,7 @@ class ChannelPipeline:
 
     def process_item(self, channel_item, spider):
         try:
+            spider.logger.info("ITEM IS IN PIPELINE, PORCESSING...")
             channel_dict = channel_item
             del channel_dict["articles"]
             del channel_dict["is_crawled"]
@@ -70,7 +71,7 @@ class ChannelPipeline:
                 #updating channel
                 request = "UPDATE channels SET"
                 for key in channel_dict.keys():
-                    request += " {} = {}".format(key,channel_dict[key])
+                    request += " {} = {}".format(key, channel_dict[key])
                 request += " WHERE url = {}".format(channel_item["url"])
 
                 cursor.execute(request)
@@ -87,13 +88,19 @@ class ChannelPipeline:
                     article_dict = dict(vars(article), channel_id=channel_id)
                     db_ops.write_to_db(self.conn, "articles", **article_dict)  # TODO write_to_db - article
 
-            del channel_dict
-            del article_dict
+            spider.logger.info("ITEM PROCESSED")
+
+            # if channel_dict:
+            #     spider.logger.info(channel_dict)
+            # if article_dict:
+            #     print(article_dict)
             return channel_item  # TODO CHANGE TO DELETION?
 
         except InterfaceError:
+            spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(channel_item, spider)
         except AttributeError:
+            spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(channel_item, spider)
