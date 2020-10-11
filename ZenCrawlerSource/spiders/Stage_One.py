@@ -135,7 +135,7 @@ class ExampleSpider(scrapy.Spider):
         while channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
             self.parse_from_page(response)
             next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()[-1]
-            yield response.follow(next_page, callback=self.parse_by_letter, dont_filter=True)
+            yield response.follow(next_page, callback=self.parse_by_letter)
 
     def parse_from_page(self, response):
         chans = response.css("a.channel-item__link::attr(href)").getall()
@@ -163,7 +163,7 @@ class ExampleSpider(scrapy.Spider):
                                       callback=self.fetch_article,
                                       cb_kwargs=dict(channel=chan, total_articles=len(urls))
                                       )
-        del chan
+        # del chan
 
         # yield from response.follow_all(urls,
         #                                callback=self.fetch_article,
@@ -223,7 +223,7 @@ class ExampleSpider(scrapy.Spider):
     @staticmethod
     def itemize(channel):
         # articles = [ExampleSpider.article_to_item(article) for article in channel.articles]
-        chan_item = ChannelItem(
+        item = ChannelItem(
                                 channel.subs,
                                 channel.audience,
                                 channel.url,
@@ -233,7 +233,7 @@ class ExampleSpider(scrapy.Spider):
                                 channel.form,
                                 channel.is_cralwed
                                 )
-        return chan_item
+        return item
 
     # @staticmethod
     # def get_reads(string):
@@ -288,11 +288,11 @@ class TestSpider(scrapy.Spider):
 
         for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
             if a != "media/zen/channels": # DONE теперь итерация правильная - TODO
-                yield response.follow(a, callback=self.parse_by_letter, dont_filter=True)
+                yield response.follow(a, callback=self.parse_by_letter)
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()
-        while channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
+        while channel_top:  # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
             self.parse_from_page(response)
             next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()[-1]
             yield response.follow(next_page, callback=self.parse_by_letter)
