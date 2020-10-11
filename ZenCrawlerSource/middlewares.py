@@ -194,7 +194,8 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         spider.logger.warning(f"self.conn closed")
 
     def process_request(self, request, spider):
-        spider.logger.warning("Processing request...")
+        spider.logger.warning("Processing request (see url below)")
+        spider.logger.warning(request.url)
         if request.meta['proxy'] == '' or not request.meta['proxy']:
             proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
             proxy_string = proxy.get_address()
