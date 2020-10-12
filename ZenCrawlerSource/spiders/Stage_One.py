@@ -300,7 +300,9 @@ class FirstLevelSpider(scrapy.Spider):
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()
         with open("channels.txt", "a+"):
-            yield channel_top
+            yield {
+                    response.url: channel_top
+            }
 
 
 class TestSpider(scrapy.Spider):
