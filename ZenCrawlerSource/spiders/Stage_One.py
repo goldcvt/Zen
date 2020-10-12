@@ -283,13 +283,13 @@ class FirstLevelSpider(scrapy.Spider):
     name = "level1"
 
     allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
-    start_urls = ["https://zen.yandex.ru/media/zen/channels"]
+    # start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
-    # def start_requests(self):
-    #     url = "https://zen.yandex.ru/media/zen/channels"
-    #     yield scrapy.Request(url=url, callback=self.parse, dont_filter=False) # фильтрация магическим образом все ломает
-    #     # и вот почему: сразу после process_exception мы кидаем запрос в scheduler
-    #     # но он фильтрует... Так вот все и происходит) поэтому надо как-то это исправить, может с ретраем попытаться
+    def start_requests(self):
+        url = "https://zen.yandex.ru/media/zen/channels"
+        yield scrapy.Request(url=url, callback=self.parse, dont_filter=False) # фильтрация магическим образом все ломает
+        # и вот почему: сразу после process_exception мы кидаем запрос в scheduler
+        # но он фильтрует... Так вот все и происходит) поэтому надо как-то это исправить, может с ретраем попытаться
 
     def parse(self, response):
         for a in response.css("div.alphabet__list a.alphabet__item::attr(href)").getall():  # TODO FIX does thing twice
