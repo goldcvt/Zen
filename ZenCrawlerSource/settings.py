@@ -58,7 +58,7 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
-    'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
+    # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
     # 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     # 'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
@@ -78,10 +78,10 @@ DUPEFILTER_DEBUG = False
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-    'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
-    # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150
-}
+# ITEM_PIPELINES = {
+#     # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
+#     # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
