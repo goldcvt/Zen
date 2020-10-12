@@ -107,6 +107,7 @@ RETRY_ENABLED = False
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
 # пайплайне
 CLOSESPIDER_ITEMCOUNT = 100
+CLOSESPIDER_TIMEOUT = 1800
 
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'
