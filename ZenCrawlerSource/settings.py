@@ -58,7 +58,7 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
-    # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
+    'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
@@ -106,7 +106,7 @@ RETRY_ENABLED = False
 # CloseSpider Ext SETTINGS - ANCHOR
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
 # пайплайне
-CLOSESPIDER_ITEMCOUNT = 500
+CLOSESPIDER_ITEMCOUNT = 100
 
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'
