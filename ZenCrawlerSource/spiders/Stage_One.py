@@ -302,7 +302,7 @@ class SecondLevelSpider(scrapy.Spider):
         while channel_top:  # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
             self.parse_from_page(response)
             next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()
-            if len(next_page > 1):
+            if len(next_page) > 1:
                 nxt_page = next_page[-1]
             else:
                 nxt_page = next_page[0]

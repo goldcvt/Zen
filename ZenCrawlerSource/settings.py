@@ -62,7 +62,7 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
-
+LOG_FILE = "logs.txt"
 # RANDOM_UA_PER_PROXY = True
 # RANDOM_UA_TYPE = 'desktop.random'
 
