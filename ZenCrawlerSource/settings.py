@@ -92,9 +92,9 @@ AUTOTHROTTLE_START_DELAY = 0.5
 AUTOTHROTTLE_MAX_DELAY = 1
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-AUTOTHROTTLE_TARGET_CONCURRENCY = 32.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 100
 # Enable showing throttling stats for every response received:
-AUTOTHROTTLE_DEBUG = False
+AUTOTHROTTLE_DEBUG = True
 
 HTTPERROR_ALLOWED_CODES = []  # actually, spider doesn't get non-200 responses to parse, downloader still works tho
 
@@ -106,12 +106,12 @@ RETRY_ENABLED = False
 # CloseSpider Ext SETTINGS - ANCHOR
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
 # пайплайне
-CLOSESPIDER_ITEMCOUNT = 1000
+CLOSESPIDER_ITEMCOUNT = 50
 
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'
 
-DOWNLOAD_TIMEOUT = 10
+DOWNLOAD_TIMEOUT = 5
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings

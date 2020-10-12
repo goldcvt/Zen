@@ -298,9 +298,10 @@ class FirstLevelSpider(scrapy.Spider):
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=False)
 
     def parse_by_letter(self, response):
-        channel_top = response.css("a.channel-item__link").get()
+        channel_top = response.css("a.channel-item__link::attr(href)").get()
         with open("channels.txt", "a+") as f:
             f.write(channel_top)
+        yield {channel_top: response.css("a.channel-item__link::text").get()}
 
 
 
