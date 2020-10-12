@@ -291,9 +291,9 @@ class FirstLevelSpider(scrapy.Spider):
     #     # и вот почему: сразу после process_exception мы кидаем запрос в scheduler
     #     # но он фильтрует... Так вот все и происходит) поэтому надо как-то это исправить, может с ретраем попытаться
 
-    def parse(self, response): # dont_filter=True is applied to itself for some reason
-        for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):  # TODO FIX does thing twice
-            if a != "media/zen/channels":  # DONE теперь итерация правильная - TODO
+    def parse(self, response):
+        for a in response.css("div.alphabet__list a.alphabet__item::attr(href)").getall():  # TODO FIX does thing twice
+            if a != "media/zen/channels":
                 self.logger.warning("PArsing letter: " + a)
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=False)
 
