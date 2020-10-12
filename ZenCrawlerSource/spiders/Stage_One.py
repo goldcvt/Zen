@@ -299,7 +299,8 @@ class FirstLevelSpider(scrapy.Spider):
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()
-        self.logger.warning("Page-top channel url: " + channel_top)
+        with open("channels.txt", "a+"):
+            yield channel_top
 
 
 class TestSpider(scrapy.Spider):
