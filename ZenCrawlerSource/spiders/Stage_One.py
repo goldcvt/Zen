@@ -2,7 +2,7 @@ import scrapy
 from crawler_toolz import db_ops
 import datetime
 import re
-from ZenCrawlerSource.items import ArticleItem, ChannelItem
+from ZenCrawlerSource.items import ArticleItem, ChannelItem, ZencrawlersourceItem
 import json
 from tqdm import tqdm
 from psycopg2 import InterfaceError
@@ -279,8 +279,8 @@ class ExampleSpider(scrapy.Spider):
 #  Впрочем, это необязательно - мы несколько статей смотрим
 
 
-class FirstLevelSpider(scrapy.Spider):
-    name = "level1"
+class SecondLevelSpider(scrapy.Spider):
+    name = "level2"
 
     allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
     # start_urls = ["https://zen.yandex.ru/media/zen/channels"]
@@ -299,10 +299,16 @@ class FirstLevelSpider(scrapy.Spider):
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link::attr(href)").get()
-        yield {channel_top: response.css("a.channel-item__link::text").get()}
-        with open("channels.txt", "a+") as f:
-            f.write(channel_top + "\n")
+        while channel_top:  # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
+            self.parse_from_page(response)
+            next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()[-1]
+            yield response.follow(next_page, callback=self.parse_by_letter)
 
+    def parse_from_page(self, response):
+        chans = response.css("a.channel-item__link::attr(href)").getall()
+        for chan in chans:
+            item = ZencrawlersourceItem(chan)
+            yield item
 
 
 

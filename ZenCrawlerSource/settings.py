@@ -59,8 +59,8 @@ DOWNLOADER_MIDDLEWARES = {
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
-    # 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    # 'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
 
 # RANDOM_UA_PER_PROXY = True
@@ -78,10 +78,10 @@ DUPEFILTER_DEBUG = False
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#     # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
-#     # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150
-# }
+ITEM_PIPELINES = {
+    'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
+    # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -106,7 +106,7 @@ RETRY_ENABLED = False
 # CloseSpider Ext SETTINGS - ANCHOR
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
 # пайплайне
-# CLOSESPIDER_ITEMCOUNT = 100
+CLOSESPIDER_ITEMCOUNT = 500
 
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'
