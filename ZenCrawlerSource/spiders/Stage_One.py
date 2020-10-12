@@ -287,13 +287,15 @@ class FirstLevelSpider(scrapy.Spider):
 
     def start_requests(self):
         url = "https://zen.yandex.ru/media/zen/channels"
-        yield scrapy.Request(url=url, callback=self.parse, dont_filter=False)
+        yield scrapy.Request(url=url, callback=self.parse, dont_filter=False) # фильтрация магическим образом все ломает
+        # и вот почему: сразу после process_exception мы кидаем запрос в scheduler
+        # но он фильтрует... Так вот все и происходит) поэтому надо как-то это исправить, может с ретраем попытаться
 
     def parse(self, response): # dont_filter=True is applied to itself for some reason
         for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
             if a != "media/zen/channels":  # DONE теперь итерация правильная - TODO
                 self.logger.warning("PArsing letter: " + a)
-                yield response.follow(a, callback=self.parse_by_letter, dont_filter=True)
+                yield response.follow(a, callback=self.parse_by_letter, dont_filter=False)
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()

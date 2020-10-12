@@ -195,6 +195,9 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         spider.logger.warning(f"self.conn closed")
 
     def process_request(self, request, spider):
+        if request.dont_filter: # fixes infinite retrying
+            request.dont_filter = False
+
         spider.logger.warning("Processing request (see url below)")
         spider.logger.warning(request.url)
         if request.meta['proxy'] == '' or not request.meta['proxy']:
@@ -248,7 +251,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         except AttributeError: # could lead to more complicated bugs, but it'll do just fine if works
             spider.logger.warning("finally, AttributeError")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-
+        request.dont_filter = True # makes process_request work on handled request
         return request # такое чувство, что вот здесь хуйня фильтрует лишнего. типа когда снимаешь фильтры,
         # запросы норм идут
 
