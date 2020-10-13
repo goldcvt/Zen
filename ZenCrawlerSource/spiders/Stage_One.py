@@ -306,7 +306,7 @@ class SecondLevelSpider(scrapy.Spider):
                 # nxt_page = next_page[-1] TODO pay attention
                 yield response.follow(next_page[-1], callback=self.parse_by_letter)
             elif len(next_page) == 1:
-                # nxt_page = next_page[0]
+                # nxt_page = next_page[0] AND HERE
                 yield response.follow(next_page[0], callback=self.parse_by_letter)
 
     def parse_from_page(self, response):
