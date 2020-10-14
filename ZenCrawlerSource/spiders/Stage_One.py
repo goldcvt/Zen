@@ -106,7 +106,8 @@ class Channels():
         return self
 
     def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
-        found = db_ops.read_from_db(conn, "channels", "channel_id", where="url={}".format(self.url))[0][0]
+        found = db_ops.read_from_db(conn, "channels", "channel_id", where="url={}".format(self.url))[0][0].translate(
+						str.maketrans("a", "a", "()"))
         # DEBUG а мы что возвращаем?)
         if not found:
             self.is_crawled = False
@@ -213,7 +214,7 @@ class ExampleSpider(scrapy.Spider):
         # TODO Fix this в целом плохой перевод в айтемы, ведь по сути у нас уже есть объекты нужные
 
     def get_reads(self, response):
-        resp_string = u"{}".format(response.css("body p").get())
+        resp_string = "{}".format(response.css("body p").get())
         my_dict = json.loads(resp_string)
         reads = my_dict["viewsTillEnd"]
         views = my_dict["views"]
