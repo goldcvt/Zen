@@ -28,7 +28,7 @@ CONCURRENT_REQUESTS = 100
 #DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
-CONCURRENT_REQUESTS_PER_IP = 50
+CONCURRENT_REQUESTS_PER_IP = 100
 
 # Disable cookies (enabled by default)
 COOKIES_ENABLED = False  # just in case, y'know

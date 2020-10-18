@@ -293,28 +293,39 @@ class SecondLevelSpider(scrapy.Spider):
         # но он фильтрует... Так вот все и происходит) поэтому надо как-то это исправить, может с ретраем попытаться
 
     def parse(self, response):
-        for a in response.css("div.alphabet__list a.alphabet__item::attr(href)").getall():  # TODO FIX does thing twice
+        for a in response.css("div.alphabet__list a.alphabet__item::attr(href)").getall():
             if a != "media/zen/channels":
                 self.logger.warning("PArsing letter: " + a)
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=False)
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link::attr(href)").get()
-        if channel_top:  # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
-            self.parse_from_page(response)
+        if channel_top:
+            # self.parse_from_page(response) # TODO не выполняется в принципе
             next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()
             if len(next_page) > 1:
                 # nxt_page = next_page[-1] TODO pay attention
                 yield response.follow(next_page[-1], callback=self.parse_by_letter)
+
+                chans = response.css("a.channel-item__link::attr(href)").getall()
+                for chan in chans:
+                    yield response.follow(chan, callback=self.parse_from_page())
+
             elif len(next_page) == 1:
                 # nxt_page = next_page[0] AND HERE
                 yield response.follow(next_page[0], callback=self.parse_by_letter)
 
+                chans = response.css("a.channel-item__link::attr(href)").getall()
+                for chan in chans:
+                    yield response.follow(chan, callback=self.parse_from_page())
+
     def parse_from_page(self, response):
-        chans = response.css("a.channel-item__link::attr(href)").getall()
-        for chan in chans:
-            item = ZencrawlersourceItem(chan)
-            yield item
+        # chans = response.css("a.channel-item__link::attr(href)").getall()
+        # for chan in chans:
+        self.logger.warning("Processing channel: " + response.css("div.app-redesign-view__main-container "
+                                                                  "div.desktop-channel-2-top__title::text").get())
+        item = ZencrawlersourceItem(response.url)
+        yield item
 
 
 
