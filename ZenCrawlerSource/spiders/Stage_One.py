@@ -325,7 +325,10 @@ class SecondLevelSpider(scrapy.Spider):
         name = response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get()
         if name:
             self.logger.warning("Processing channel: " + name)
-        item = ZencrawlersourceItem(channel_name=name, channel_url=response.url)
+            item = ZencrawlersourceItem(channel_name=name, channel_url=response.url)
+        else:
+            self.logger.warning("Processing channel with blank name: " + response.url)
+            item = ZencrawlersourceItem(channel_name="NoneThing", channel_url=response.url)
         yield item
 
 
