@@ -309,7 +309,7 @@ class SecondLevelSpider(scrapy.Spider):
 
                 chans = response.css("a.channel-item__link::attr(href)").getall()
                 for chan in chans:
-                    yield response.follow(chan, callback=self.parse_from_page())
+                    yield response.follow(chan, callback=self.parse_channel)
 
             elif len(next_page) == 1:
                 # nxt_page = next_page[0] AND HERE
@@ -317,9 +317,9 @@ class SecondLevelSpider(scrapy.Spider):
 
                 chans = response.css("a.channel-item__link::attr(href)").getall()
                 for chan in chans:
-                    yield response.follow(chan, callback=self.parse_from_page())
+                    yield response.follow(chan, callback=self.parse_channel)
 
-    def parse_from_page(self, response):
+    def parse_channel(self, response):
         # chans = response.css("a.channel-item__link::attr(href)").getall()
         # for chan in chans:
         self.logger.warning("Processing channel: " + response.css("div.app-redesign-view__main-container "
