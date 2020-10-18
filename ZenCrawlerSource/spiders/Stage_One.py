@@ -295,7 +295,7 @@ class SecondLevelSpider(scrapy.Spider):
     def parse(self, response):
         for a in response.css("div.alphabet__list a.alphabet__item::attr(href)").getall():
             if a != "media/zen/channels":
-                self.logger.warning("PArsing letter: " + a)
+                self.logger.warning("Parsing letter: " + a)
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=False)
 
     def parse_by_letter(self, response):
@@ -322,8 +322,8 @@ class SecondLevelSpider(scrapy.Spider):
     def parse_channel(self, response):
         # chans = response.css("a.channel-item__link::attr(href)").getall()
         # for chan in chans:
-        self.logger.warning("Processing channel: " + response.css("div.app-redesign-view__main-container "
-                                                                  "div.desktop-channel-2-top__title::text").get())
+        if response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get():
+            self.logger.warning("Processing channel: " + response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get())
         item = ZencrawlersourceItem(response.url)
         yield item
 
