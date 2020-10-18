@@ -28,7 +28,7 @@ CONCURRENT_REQUESTS = 100
 #DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
-CONCURRENT_REQUESTS_PER_IP = 100
+CONCURRENT_REQUESTS_PER_IP = 50
 
 # Disable cookies (enabled by default)
 COOKIES_ENABLED = False  # just in case, y'know
@@ -93,7 +93,7 @@ AUTOTHROTTLE_START_DELAY = 0.5
 AUTOTHROTTLE_MAX_DELAY = 1
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-AUTOTHROTTLE_TARGET_CONCURRENCY = 100
+AUTOTHROTTLE_TARGET_CONCURRENCY = 50
 # Enable showing throttling stats for every response received:
 AUTOTHROTTLE_DEBUG = True
 
