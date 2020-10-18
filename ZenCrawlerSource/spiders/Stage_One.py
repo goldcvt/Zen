@@ -133,7 +133,7 @@ class ExampleSpider(scrapy.Spider):
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()
-        while channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
+        if channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
             self.parse_from_page(response)
             next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()[-1]
             yield response.follow(next_page, callback=self.parse_by_letter)
@@ -300,7 +300,7 @@ class SecondLevelSpider(scrapy.Spider):
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link::attr(href)").get()
-        while channel_top:  # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
+        if channel_top:  # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
             self.parse_from_page(response)
             next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()
             if len(next_page) > 1:
