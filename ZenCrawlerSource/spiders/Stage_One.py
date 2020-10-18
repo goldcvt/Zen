@@ -322,9 +322,10 @@ class SecondLevelSpider(scrapy.Spider):
     def parse_channel(self, response):
         # chans = response.css("a.channel-item__link::attr(href)").getall()
         # for chan in chans:
-        if response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get():
-            self.logger.warning("Processing channel: " + response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get())
-        item = ZencrawlersourceItem(channel_name=response.url)
+        name = response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get()
+        if name:
+            self.logger.warning("Processing channel: " + name)
+        item = ZencrawlersourceItem(channel_name=name, channel_url=response.url)
         yield item
 
 
