@@ -257,3 +257,84 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+class OnlyExceptionsProxified:
+    def __init__(self):  # added connection to db
+        self.db = "proxy_db"
+        self.usr = "postgres"
+        self.pswd = "postgres"
+        self.hst = "127.0.0.1"
+        self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls()   # also calls __init__
+        crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
+        crawler.signals.connect(s.close_spider, signal=signals.spider_closed)
+        return s
+
+    def open_spider(self, spider): # isn't being called upon spider's opening))
+        spider.logger.warning(f"self.conn established: {self.conn}")
+
+    def close_spider(self, spider):
+        self.conn.close()  # можно сигналом закрывать соединение
+        spider.logger.warning(f"self.conn closed")
+
+    def process_request(self, request, spider):
+        if request.dont_filter: # fixes infinite retrying
+            request.dont_filter = False
+        return None
+
+    def process_response(self, request, response, spider):
+        spider.logger.warning(f"Response status is {response.status}")
+        if response.url.find("zen.yandex.ru/id/") != -1:
+            global chans_processed
+            chans_processed += 1
+            spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
+                                  % (chans_processed, chans_processed / 3400))  # console log
+        # 4xx errors handler
+        if response.status == 200:
+            return response
+        elif response.status in [407, 409, 500, 501, 502, 503, 508]:
+            if request.meta['proxy']:
+                if request.meta['proxy'] != '':
+                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+            request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+            return request
+        else: # то есть нужно по-хорошему тестить уже на дзенчике, вдруг умники с яндекса
+            # отдадут вечный 3хх или 404) ну посмотрим, посмотрим
+            return response
+
+    def process_exception(self, request, exception, spider):
+        try:
+            if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
+                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                request.meta['proxy'] = proxy.get_address()
+            # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
+            elif not self.conn:
+                raise AttributeError
+            else:
+                proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                request.meta['proxy'] = proxy.get_address()
+
+        except KeyError:  # always getting triggered. TODO rework rotation logic around this
+            # traceback.print_exc()
+            request.meta['proxy'] = ''
+            spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
+
+        except InterfaceError:
+            spider.logger.warning("Could not connect to db, conn closed, re-establishing")
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            if request.meta['proxy'] != '':
+                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                request.meta['proxy'] = ''
+
+        except AttributeError: # could lead to more complicated bugs, but it'll do just fine if works
+            spider.logger.warning("finally, AttributeError")
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+        request.dont_filter = True # makes process_request work on handled request
+        return request # такое чувство, что вот здесь хуйня фильтрует лишнего. типа когда снимаешь фильтры,
+        # запросы норм идут
