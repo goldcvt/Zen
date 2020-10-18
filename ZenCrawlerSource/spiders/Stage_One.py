@@ -324,7 +324,7 @@ class SecondLevelSpider(scrapy.Spider):
         # for chan in chans:
         if response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get():
             self.logger.warning("Processing channel: " + response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get())
-        item = ZencrawlersourceItem(response.url)
+        item = ZencrawlersourceItem(channel_name=response.url)
         yield item
 
 

@@ -297,7 +297,7 @@ class OnlyExceptionsProxified:
         # 4xx errors handler
         if response.status == 200:
             return response
-        elif response.status in [407, 409, 500, 501, 502, 503, 508]:
+        elif response.status in [407, 409, 500, 501, 502, 503, 508, 301, 302, 307]:
             if request.meta['proxy']:
                 if request.meta['proxy'] != '':
                     proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
