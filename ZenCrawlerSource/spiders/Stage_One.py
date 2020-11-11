@@ -63,7 +63,9 @@ class Channels():
     def parse_description(response):
         desc_links = response.css("div.zen-app div.channel-header-view-desktop__description-block a::attr(href)").getall()
         desc_text = response.css("div.zen-app div.channel-header-view-desktop__description-block p::text").get()
-        emails = re.findall("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", desc_text)
+        emails = None
+        if desc_text:
+            emails = re.findall("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", desc_text)
         if desc_links or emails:
             return desc_links + emails
         else:
