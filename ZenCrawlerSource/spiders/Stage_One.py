@@ -246,27 +246,40 @@ class ExampleSpider(scrapy.Spider):
     def get_date(datestring):
         elements = datestring.lower().split(" ")
         final_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
-        if datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1:
+        # datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1 and
+        if datestring.lower().find('дня') == -1 and datestring.lower().find('чера') ==-1 and datestring.lower().find('назад') == -1:
             # yesterday, today, 3 days ago - всё тут)
-            months = ['january', 'february', 'march', 'april',
-                      'may', 'june', 'july', 'august',
-                      'september', 'october', 'november', 'december']
+            # months = ['january', 'february', 'march', 'april',
+            #           'may', 'june', 'july', 'august',
+            #           'september', 'october', 'november', 'december']
+            months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября",
+                      "ноября", "декабря"]
             month = months.index(elements[1]) + 1
 
             if len(elements) < 3:
                 final_date = datetime.datetime(2020, month, int(elements[0]), 4, 20, 0, 0) # WARNING помни)
             else:
                 final_date = datetime.datetime(int(elements[2]), month, int(elements[0]), 4, 20, 0, 0)
-
-        elif datestring.lower().find('today') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
+        # datestring.lower().find('today') != -1 or
+        elif datestring.lower().find('егодня') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
             final_date = datetime.datetime.now()
-        elif datestring.lower().find('yesterday') != -1:
+        # datestring.lower().find('yesterday') != -1 or
+        elif datestring.lower().find('чера') != -1:
             tmp = datetime.datetime.now()
             final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - 1, 4, 20, 0, 0)
-        elif datestring.lower().find('ago') != -1:
+        elif datestring.lower().find('назад') != -1:
             tmp = datetime.datetime.now()
-            shift = int(datestring.split(" ")[0])
-            final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - shift)
+            if elements[0] != "Год":
+                shift = int(elements[0])
+                if elements[1] == 'дня' or elements[1] == 'дней':
+                    final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - shift)
+                elif elements[1] == 'года' or elements[1] == 'лет':
+                    final_date = datetime.datetime(tmp.year - shift, tmp.month, tmp.day)
+                elif elements[1] == 'месяцев':
+                    final_date = datetime.datetime(tmp.year, tmp.month - shift, tmp.day)
+            else:
+                final_date = datetime.datetime(tmp.year-1, tmp.month, tmp.day)
+
         return final_date
     
     def closed(self, reason):
