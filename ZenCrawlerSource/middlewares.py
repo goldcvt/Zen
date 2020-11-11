@@ -297,23 +297,29 @@ class OnlyExceptionsProxified:
         # 4xx errors handler
         if response.status == 200:
             return response
-        elif response.status in [407, 409, 500, 501, 502, 503, 508, 301, 302, 307]:
+        elif response.status in [407, 409, 500, 501, 502, 503, 508, 301, 302, 307, 303, 304]:
+
             if 'proxy' in request.meta: # checks that key exists
                 if request.meta['proxy'] != '':
                     proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
                 return request
             else:
-                raise Exception
+                request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                return request
+
+        elif response.status == 404:
+            return response
+
         else: # то есть нужно по-хорошему тестить уже на дзенчике, вдруг умники с яндекса
             # отдадут вечный 3хх или 404) ну посмотрим, посмотрим
             # или бляццкую пустую страницу
-            return response
+            raise Exception
 
     def process_exception(self, request, exception, spider):
         try:
             if 'proxy' not in request.meta:
-                request.meta['proxy'] == ''
+                request.meta['proxy'] = ''
             if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
                 proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)

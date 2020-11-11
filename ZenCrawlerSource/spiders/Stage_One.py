@@ -156,9 +156,9 @@ class ExampleSpider(scrapy.Spider):
     #     yield from response.follow_all(chans, callback=self.parse_channel) # just calls, no returns
 
     def parse_channel(self, response): # DONE перевели на классы - TODO
+        self.logger.info(response.text)
         self.logger.warning("Parsing channel: " + response.url)
         self.logger.warning("Channel name: " + response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get())
-        self.logger.info(response.text)
         default_stats = response.css("div.desktop-channel-2-bottom-layout__counter-container div.desktop-channel-2-counter__value::text").getall()
         # DONE implemented PC UA TODO
         subs = int("".join(default_stats[0].split(" ")))
