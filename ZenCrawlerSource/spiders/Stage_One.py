@@ -186,9 +186,10 @@ class ExampleSpider(scrapy.Spider):
 
     def fetch_article(self, response, channel, total_articles):
         title = response.css("div#article__page-root h1.article__title::text").get()
-
-        date = ExampleSpider.get_date(response.css("footer.article__statistics span.article-stat__date::text")
-                                      .get())
+        d_str = response.css("footer.article__statistics span.article-stat__date::text").get().encode("utf-8")
+        date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
+        if d_str:
+            date = ExampleSpider.get_date(d_str)
         # url = response.url
         # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to
         #  get_reads or
