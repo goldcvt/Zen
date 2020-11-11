@@ -250,8 +250,8 @@ class ExampleSpider(scrapy.Spider):
     def get_date(datestring):
         elements = datestring.lower().decode('utf-8').split(" ")
         final_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
-        # datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1 and
-        if datestring.lower().find('дня') == -1 and datestring.lower().find('чера') ==-1 and datestring.lower().find('назад') == -1:
+        # datestring.lower().decode('utf-8').find('ago') == -1 and datestring.lower().decode('utf-8').find('day') == -1 and
+        if datestring.lower().decode('utf-8').find('дня') == -1 and datestring.lower().decode('utf-8').find('чера') ==-1 and datestring.lower().decode('utf-8').find('назад') == -1:
             # yesterday, today, 3 days ago - всё тут)
             # months = ['january', 'february', 'march', 'april',
             #           'may', 'june', 'july', 'august',
@@ -264,14 +264,14 @@ class ExampleSpider(scrapy.Spider):
                 final_date = datetime.datetime(2020, month, int(elements[0]), 4, 20, 0, 0) # WARNING помни)
             else:
                 final_date = datetime.datetime(int(elements[2]), month, int(elements[0]), 4, 20, 0, 0)
-        # datestring.lower().find('today') != -1 or
-        elif datestring.lower().find('егодня') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
+        # datestring.lower().decode('utf-8').find('today') != -1 or
+        elif datestring.lower().decode('utf-8').find('егодня') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
             final_date = datetime.datetime.now()
-        # datestring.lower().find('yesterday') != -1 or
-        elif datestring.lower().find('чера') != -1:
+        # datestring.lower().decode('utf-8').find('yesterday') != -1 or
+        elif datestring.lower().decode('utf-8').find('чера') != -1:
             tmp = datetime.datetime.now()
             final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - 1, 4, 20, 0, 0)
-        elif datestring.lower().find('назад') != -1:
+        elif datestring.lower().decode('utf-8').find('назад') != -1:
             tmp = datetime.datetime.now()
             if elements[0] != "год":
                 shift = int(elements[0])
