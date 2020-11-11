@@ -93,7 +93,7 @@ class Channels():
         return self
 
     def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
-        found = db_ops.read_from_db(conn, "channels", "channel_id", where="url={}".format(self.url))[0][0].translate(str.maketrans("a", "a", "()"))
+        found = db_ops.read_from_db(conn, "channels", "channel_id", where="url='{}'".format(self.url))[0][0].translate(str.maketrans("a", "a", "()"))
         # DEBUG а мы что возвращаем?)
         if not found:
             self.is_crawled = False
