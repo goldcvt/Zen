@@ -269,7 +269,7 @@ class ExampleSpider(scrapy.Spider):
             final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - 1, 4, 20, 0, 0)
         elif datestring.lower().find('назад') != -1:
             tmp = datetime.datetime.now()
-            if elements[0] != "Год":
+            if elements[0] != "год":
                 shift = int(elements[0])
                 if elements[1] == 'дня' or elements[1] == 'дней':
                     final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - shift)
