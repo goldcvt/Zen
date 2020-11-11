@@ -154,8 +154,11 @@ class ExampleSpider(scrapy.Spider):
         except InterfaceError:
             self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
             chan.if_crawled(self.zen_conn)
-        urls = response.css("div.card-wrapper__inner a::attr(href)").getall()[:5]
+
+        # can move that line to top and make if statement, so we only get channels w/ articles to bd
+        urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]
         # CHANGE x in [:x] for different MAX amount of articles to be fetched
+
 
         for url in urls:
             if url.find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
