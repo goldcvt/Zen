@@ -157,7 +157,7 @@ class ExampleSpider(scrapy.Spider):
 
     def parse_channel(self, response): # DONE перевели на классы - TODO
         self.logger.warning("Parsing channel: " + response.url)
-        default_stats = response.css("div.desktop-channel-2-counter__value::text").getall()
+        default_stats = response.css("div.desktop-channel-2-bottom-layout__counter-container div.desktop-channel-2-counter__value::text").getall()
         # DONE implemented PC UA TODO
         subs = int("".join(default_stats[0].split(" ")))
         audience = int("".join(default_stats[1].split(" ")))
