@@ -106,8 +106,7 @@ class Channels():
         return self
 
     def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
-        found = db_ops.read_from_db(conn, "channels", "channel_id", where="url={}".format(self.url))[0][0].translate(
-						str.maketrans("a", "a", "()"))
+        found = db_ops.read_from_db(conn, "channels", "channel_id", where="url={}".format(self.url))[0][0].translate(str.maketrans("a", "a", "()"))
         # DEBUG а мы что возвращаем?)
         if not found:
             self.is_crawled = False
@@ -134,13 +133,27 @@ class ExampleSpider(scrapy.Spider):
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()
         if channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
-            self.parse_from_page(response)
-            next_page = response.css("div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()[-1]
-            yield response.follow(next_page, callback=self.parse_by_letter)
+            next_page = response.css(
+                "div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()
+            if len(next_page) > 1:
+                # nxt_page = next_page[-1] TODO pay attention
+                yield response.follow(next_page[-1], callback=self.parse_by_letter)
 
-    def parse_from_page(self, response):
-        chans = response.css("a.channel-item__link::attr(href)").getall()
-        yield from response.follow_all(chans, callback=self.parse_channel) # just calls, no returns
+                chans = response.css("a.channel-item__link::attr(href)").getall()
+                for chan in chans:
+                    yield response.follow(chan, callback=self.parse_channel)
+
+            elif len(next_page) == 1:
+                # nxt_page = next_page[0] AND HERE
+                yield response.follow(next_page[0], callback=self.parse_by_letter)
+
+                chans = response.css("a.channel-item__link::attr(href)").getall()
+                for chan in chans:
+                    yield response.follow(chan, callback=self.parse_channel)
+
+    # def parse_from_page(self, response):
+    #     chans = response.css("a.channel-item__link::attr(href)").getall()
+    #     yield from response.follow_all(chans, callback=self.parse_channel) # just calls, no returns
 
     def parse_channel(self, response): # DONE перевели на классы - TODO
         default_stats = response.css("div.desktop-channel-2-counter__value::text").getall()
