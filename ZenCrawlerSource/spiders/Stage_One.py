@@ -186,10 +186,10 @@ class ExampleSpider(scrapy.Spider):
 
     def fetch_article(self, response, channel, total_articles):
         title = response.css("div#article__page-root h1.article__title::text").get()
-        d_str = response.css("footer.article__statistics span.article-stat__date::text").get().encode("utf-8")
+        d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
         date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
         if d_str:
-            date = ExampleSpider.get_date(d_str)
+            date = ExampleSpider.get_date(d_str.encode("utf-8"))
         # url = response.url
         # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to
         #  get_reads or
@@ -245,7 +245,7 @@ class ExampleSpider(scrapy.Spider):
 
     @staticmethod
     def get_date(datestring):
-        elements = datestring.lower().split(" ")
+        elements = datestring.lower().decode('utf-8').split(" ")
         final_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
         # datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1 and
         if datestring.lower().find('дня') == -1 and datestring.lower().find('чера') ==-1 and datestring.lower().find('назад') == -1:
