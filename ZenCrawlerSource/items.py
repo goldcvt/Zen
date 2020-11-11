@@ -22,6 +22,7 @@ class ArticleItem(scrapy.Item):
     arb_link = scrapy.Field()
     arbitrage = scrapy.Field()
     form = scrapy.Field()
+    streaming = scrapy.Field()
 
 
 class ChannelItem(scrapy.Item):
@@ -34,6 +35,8 @@ class ChannelItem(scrapy.Item):
     form = scrapy.Field()
     is_crawled = scrapy.Field()
     last_checked = scrapy.Field()
+    is_streaming = scrapy.Field()
+
 
 
 

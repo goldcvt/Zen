@@ -9,20 +9,8 @@ from psycopg2 import InterfaceError
 
 non_arbitrage = ['instagram.com', 'twitter.com']
 
-# class Article():
-#     def __int__(self, channel_id, reads, date, header, source_link, outer_link=None, text=None, arbitrage=False):
-#         self.channel_id = channel_id
-#         self.reads = int(reads)
-#         self.date = date
-#         self.header = header
-#         self.source_link = source_link
-#
-#         self.outer_link = outer_link
-#         self.arbitrage = True
-
-
 class Articles():
-    def __int__(self, date, header, url, arb_link=None, arbitrage=False, form=False):
+    def __int__(self, date, header, url, arb_link=None, arbitrage=False, streaming=False, form=False):
         # TODO how to get that sweet link? Got it, just read and then add when creating
         self.publication_date = date
         self.header = header
@@ -30,21 +18,25 @@ class Articles():
         self.arb_link = arb_link
         self.arbitrage = arbitrage
         self.form = form
+        self.streaming = streaming
 
     # def __iter__(self): DEPRECATED
     #     for attr, value in self.__dict__.iteritems():
     #         yield attr, value
 
     def using_form(self, response):
-        forms = response.css("div.yandex-forms-embed").get()
-        other_embeds = response.css("div.article-render__block.article-render__block_embed").get()
+        forms = response.css("div.yandex-forms-embed").get() # ANCHOR
+        streaming = response.css("").get() # ANCHOR
+        other_embeds = response.css("div.article-render__block.article-render__block_embed").get() # ANCHOR
+        if streaming:
+            self.streaming = True
         if forms or other_embeds:
             self.form = True
             self.arbitrage = True
 
-    def is_arbitrage(self, response):
-        if_p = response.css("p.article-render__block a.article-link::attr(href)").get()
-        if_blockquote = response.css("blockquote.article-render__block a.article-link::attr(href)").get()
+    def is_arbitrage(self, response): # checks straight-up link
+        if_p = response.css("p.article-render__block a.article-link::attr(href)").get() # ANCHOR
+        if_blockquote = response.css("blockquote.article-render__block a.article-link::attr(href)").get() # ANCHOR
         tmp = False
 
         # for i in non_arbitrage: # TODO откомментить, если много мусора ссылочного
@@ -61,7 +53,7 @@ class Articles():
 class Channels():
     arbitrage: bool
 
-    def __init__(self, subs, audience, url, links=[], articles=[], form=False, is_crawled=False):
+    def __init__(self, subs, audience, url, links=[], articles=[], form=False, is_crawled=False, streaming=False):
         self.subs = int(subs)
         self.audience = int(audience)
         self.url = url
@@ -69,11 +61,12 @@ class Channels():
         self.articles = articles
         self.form = form
         self.is_crawled = is_crawled
+        self.is_streaming = streaming
 
     @staticmethod
     def parse_description(response):
-        desc_links = response.css("div.desktop-channel-2-description a::attr(href)").getall()
-        desc_text = response.css("div.desktop-channel-2-description::text").get()
+        desc_links = response.css("div.desktop-channel-2-description a::attr(href)").getall() # ANCHOR
+        desc_text = response.css("div.desktop-channel-2-description::text").get() # ANCHOR
         emails = re.findall("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", desc_text)
         if desc_links or emails:
             return desc_links + emails
@@ -81,28 +74,26 @@ class Channels():
             return []
 
     def get_contacts(self, response):
-        contacts = response.css("div.desktop-channel-2-social-links a.desktop-channel-2-social-links__item::attr(href)").getall()
+        contacts = response.css("div.desktop-channel-2-social-links a.desktop-channel-2-social-links__item::attr(href)").getall() # ANCHOR
         contacts += Channels.parse_description(response)
         if contacts:
             self.links = contacts
 
     def is_arbitrage(self, number_of_articles):
-        # if len(self.articles) == 5: - DEPRECATED
         i = 0
-        j = 0
         for article in self.articles:
             if article.arbitrage:
                 i += 1
-            if article.form:
-                j += 1
+            if article.form and not self.form:
+                self.form = True
+            if article.streaming and not self.streaming:
+                self.is_streaming = True
 
         if i / number_of_articles >= 0.5:
             self.arbitrage = True
         else:
             self.arbitrage = False
 
-        if j >= 1:
-            self.form = True
         return self
 
     def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
@@ -151,13 +142,9 @@ class ExampleSpider(scrapy.Spider):
                 for chan in chans:
                     yield response.follow(chan, callback=self.parse_channel)
 
-    # def parse_from_page(self, response):
-    #     chans = response.css("a.channel-item__link::attr(href)").getall()
-    #     yield from response.follow_all(chans, callback=self.parse_channel) # just calls, no returns
-
     def parse_channel(self, response): # DONE перевели на классы - TODO
         self.logger.info(response.text)
-        self.logger.warning("Parsing channel: " + response.url)
+        self.logger.warning("Parsing channel: " + response.url) # ANCHOR
         self.logger.warning("Channel name: " + response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get())
         default_stats = response.css("div.desktop-channel-2-bottom-layout__counter-container div.desktop-channel-2-counter__value::text").getall()
         # DONE implemented PC UA TODO
@@ -171,7 +158,7 @@ class ExampleSpider(scrapy.Spider):
         except InterfaceError:
             self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
             chan.if_crawled(self.zen_conn)
-        urls = response.css("div.card-wrapper__inner a::attr(href)").getall()[:5]
+        urls = response.css("div.card-wrapper__inner a::attr(href)").getall()[:5] # ANCHOR
         # CHANGE x in [:x] for different amount of articles to be fetched
 
         for url in urls:
@@ -202,10 +189,10 @@ class ExampleSpider(scrapy.Spider):
     # TODO статистика подгружается джаваскриптом... В отличии от канальной. В первой версии она не критична
 
     def fetch_article(self, response, channel, total_articles):
-        title = response.css("h1.article__title::text").get()
+        title = response.css("h1.article__title::text").get() # ACNHOR
 
         date = ExampleSpider.get_date(response.css("footer.article__statistics span.article-stat__date::text")
-                                      .get())
+                                      .get()) # ANCHOR
         # url = response.url
         # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to
         #  get_reads or
@@ -248,8 +235,10 @@ class ExampleSpider(scrapy.Spider):
                                 channel.articles,
                                 channel.arbitrage,
                                 channel.form,
-                                channel.is_cralwed
-                                )
+                                channel.is_cralwed,
+                                datetime.datetime.now(),
+                                channel.is_streaming
+        )
         return item
 
     # @staticmethod
@@ -283,8 +272,6 @@ class ExampleSpider(scrapy.Spider):
             shift = int(datestring.split(" ")[0])
             final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - shift)
         return final_date
-
-    # если уже есть, просто удаляем из БД (а лучше ALTER)
     
     def closed(self, reason):
         self.zen_conn.close()

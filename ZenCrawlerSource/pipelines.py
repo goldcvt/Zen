@@ -58,7 +58,6 @@ class ChannelPipeline:
             del channel_dict["is_crawled"]
 
             if item["is_crawled"]:
-                item["last_checked"] = datetime.datetime.now()
                 # doing necessary stuff, you know
                 conn = self.conn
                 cursor = conn.cursor()
