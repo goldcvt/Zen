@@ -205,7 +205,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             proxy_string = proxy.get_address()
             request.meta['proxy'] = proxy_string
             spider.logger.warning(f"Proxy is set to {proxy_string}")
-        return None # TODO удостовериться, что нужно возвращать именно это
+        return None
 
     def process_response(self, request, response, spider):
         spider.logger.warning(f"Response status is {response.status}")
@@ -307,6 +307,7 @@ class OnlyExceptionsProxified:
                 raise Exception
         else: # то есть нужно по-хорошему тестить уже на дзенчике, вдруг умники с яндекса
             # отдадут вечный 3хх или 404) ну посмотрим, посмотрим
+            # или бляццкую пустую страницу
             return response
 
     def process_exception(self, request, exception, spider):
