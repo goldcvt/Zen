@@ -58,14 +58,15 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
-    'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
-    # 'ZenCrawlerSource.middlewares.OnlyExceptionsProxified': 120,
+    # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
+    'ZenCrawlerSource.middlewares.OnlyExceptionsProxified': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
-# LOG_FILE = "logs.txt"
-# RANDOM_UA_PER_PROXY = True
-# RANDOM_UA_TYPE = 'desktop.random'
+
+LOG_FILE = "logs.txt"
+RANDOM_UA_PER_PROXY = True
+RANDOM_UA_TYPE = 'desktop.random'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
