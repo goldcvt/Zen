@@ -74,6 +74,8 @@ class Channels():
         emails = None
         if desc_text:
             emails = re.findall("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", desc_text)
+            if not emails:
+                emails = []
         if desc_links or emails:
             return desc_links + emails
         else:
