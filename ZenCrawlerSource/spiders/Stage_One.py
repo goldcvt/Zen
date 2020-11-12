@@ -143,9 +143,21 @@ class ExampleSpider(scrapy.Spider):
     def parse_channel(self, response): # DONE перевели на классы - TODO
         self.logger.warning("Channel name: " + response.css("div.zen-app div.channel-header-view-desktop__info-block h1 span::text").get())
         default_stats = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__value::text").getall()
+        stat_kword = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__name::text").get()
         # DONE implemented PC UA TODO
-        subs = int("".join(default_stats[0].split(" ")))
-        audience = int("".join(default_stats[1].split(" ")))
+        if len(default_stats) == 2:
+            subs = int("".join(("".join(default_stats[0].split("<"))).split(" ")))
+            audience = int("".join(("".join(default_stats[1].split("<"))).split(" ")))
+        else:
+            if stat_kword.find("одписч") != -1:
+                subs = int("".join(("".join(default_stats[0].split("<"))).split(" ")))
+                audience = 0
+            elif stat_kword.find("удитори") != -1:
+                audience = int("".join(("".join(default_stats[0].split("<"))).split(" ")))
+                subs = 0
+            else:
+                audience = 0
+                subs = 0
         # DONE return those! Items and item pipelines TODO
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
@@ -192,7 +204,7 @@ class ExampleSpider(scrapy.Spider):
         d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
         date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
         if d_str:
-            date = ExampleSpider.get_date(d_str.encode("utf-8"))
+            date = ExampleSpider.get_date(d_str)
         # url = response.url
         # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to
         #  get_reads or
@@ -248,10 +260,10 @@ class ExampleSpider(scrapy.Spider):
 
     @staticmethod
     def get_date(datestring):
-        elements = datestring.lower().decode('utf-8').split(" ")
+        elements = datestring.lower().split("\xa0")
         final_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
-        # datestring.lower().decode('utf-8').find('ago') == -1 and datestring.lower().decode('utf-8').find('day') == -1 and
-        if datestring.lower().decode('utf-8').find('дня') == -1 and datestring.lower().decode('utf-8').find('чера') ==-1 and datestring.lower().decode('utf-8').find('назад') == -1:
+        # datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1 and
+        if datestring.lower().find('дня') == -1 and datestring.lower().find('чера') ==-1 and datestring.lower().find('назад') == -1:
             # yesterday, today, 3 days ago - всё тут)
             # months = ['january', 'february', 'march', 'april',
             #           'may', 'june', 'july', 'august',
@@ -264,14 +276,14 @@ class ExampleSpider(scrapy.Spider):
                 final_date = datetime.datetime(2020, month, int(elements[0]), 4, 20, 0, 0) # WARNING помни)
             else:
                 final_date = datetime.datetime(int(elements[2]), month, int(elements[0]), 4, 20, 0, 0)
-        # datestring.lower().decode('utf-8').find('today') != -1 or
-        elif datestring.lower().decode('utf-8').find('егодня') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
+        # datestring.lower().find('today') != -1 or
+        elif datestring.lower().find('егодня') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
             final_date = datetime.datetime.now()
-        # datestring.lower().decode('utf-8').find('yesterday') != -1 or
-        elif datestring.lower().decode('utf-8').find('чера') != -1:
+        # datestring.lower().find('yesterday') != -1 or
+        elif datestring.lower().find('чера') != -1:
             tmp = datetime.datetime.now()
             final_date = datetime.datetime(tmp.year, tmp.month, tmp.day - 1, 4, 20, 0, 0)
-        elif datestring.lower().decode('utf-8').find('назад') != -1:
+        elif datestring.lower().find('назад') != -1:
             tmp = datetime.datetime.now()
             if elements[0] != "год":
                 shift = int(elements[0])
