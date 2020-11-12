@@ -20,6 +20,9 @@ class Articles():
         self.form = form
         self.streaming = streaming
 
+    def __str__(self):
+        return f'{str(vars(self))}'
+
     def using_form(self, response):
         forms = response.css("div.yandex-forms-embed").get()
         streaming = response.css("div.yandex-efir-embed").get()
@@ -58,6 +61,10 @@ class Channels():
         self.form = form
         self.is_crawled = is_crawled
         self.is_streaming = streaming
+
+    def __str__(self):
+        my_dict = vars(self)
+        return f'{str(my_dict)}'
 
     @staticmethod
     def parse_description(response):
