@@ -9,9 +9,10 @@ from psycopg2 import InterfaceError
 
 non_arbitrage = ['instagram.com', 'twitter.com']
 
+
 class Articles():
-    def __int__(self, date, header, url, arb_link=None, arbitrage=False, streaming=False, form=False):
-        # TODO how to get that sweet link? Got it, just read and then add when creating
+
+    def __init__(self, date, header, url, arb_link=None, arbitrage=False, streaming=False, form=False):
         self.publication_date = date
         self.header = header
         self.url = url
