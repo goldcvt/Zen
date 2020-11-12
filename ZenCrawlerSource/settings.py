@@ -81,8 +81,8 @@ DUPEFILTER_DEBUG = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
-    # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150
+    # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
+    'ZenCrawlerSource.pipelines.ChannelPipeline': 150
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
