@@ -18,7 +18,7 @@ from itemadapter import ItemAdapter
 class ZencrawlersourcePipeline:
     def process_item(self, item, spider):
         with open("channels.txt", "a+") as f:
-            f.write(item["url"] + ":" + str(item["articles"]))
+            f.write(str(vars(item)))
         return item
 
 # DONE написать исправлялку, если соединение с БД наебнется
