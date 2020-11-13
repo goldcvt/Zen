@@ -179,9 +179,9 @@ class ExampleSpider(scrapy.Spider):
             chan.if_crawled(self.zen_conn)
             self.logger.warning(f"Checking whether {chan.url} was parsed")
             if chan.is_crawled:
-                self.logger.warning(f"{self.url} have been parsed before")
+                self.logger.warning(f"{chan.url} have been parsed before")
             else:
-                self.logger.warning(f"{self.url} haven't been parsed before")
+                self.logger.warning(f"{chan.url} haven't been parsed before")
         except InterfaceError:
             self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
             chan.if_crawled(self.zen_conn)
