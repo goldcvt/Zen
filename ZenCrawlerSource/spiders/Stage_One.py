@@ -74,10 +74,13 @@ class Channels():
         emails = None
         if desc_text:
             emails = re.findall("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", desc_text)
-            if not emails:
-                emails = []
-        if desc_links or emails:
+
+        if emails and desc_links:
             return desc_links + emails
+        elif emails:
+            return emails
+        elif desc_links:
+            return desc_links
         else:
             return []
 
@@ -238,8 +241,10 @@ class ExampleSpider(scrapy.Spider):
         channel.articles.append(article)
 
         if len(channel.articles) == total_articles:
+            self.logger.warning(f"All articles fetched, itemizing channel {channel.url}")
             channel.is_arbitrage(total_articles)
-            yield ExampleSpider.itemize(channel)
+            my_item = self.itemize(channel)
+            yield my_item
         # raise scrapy.exceptions.CloseSpider(reason='Test completed') TODO implement constraints
         # TODO Fix this в целом плохой перевод в айтемы, ведь по сути у нас уже есть объекты нужные
 
