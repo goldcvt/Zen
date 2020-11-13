@@ -24,6 +24,9 @@ class Articles():
     def __str__(self):
         return f'{str(vars(self))}'
 
+    def __repr__(self):
+        return f'{str(vars(self))}'
+
     def using_form(self, response):
         forms = response.css("div.yandex-forms-embed").get()
         streaming = response.css("div.yandex-efir-embed").get()
