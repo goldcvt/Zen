@@ -64,7 +64,7 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
 
-# LOG_FILE = "logs.txt"
+LOG_FILE = "logs.txt"
 RANDOM_UA_PER_PROXY = True
 RANDOM_UA_TYPE = 'desktop.random'
 
@@ -108,13 +108,13 @@ RETRY_ENABLED = False
 # CloseSpider Ext SETTINGS - ANCHOR
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
 # пайплайне
-CLOSESPIDER_ITEMCOUNT = 10
-# CLOSESPIDER_TIMEOUT = 45
+# CLOSESPIDER_ITEMCOUNT = 10
+CLOSESPIDER_TIMEOUT = 600
 
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'
 
-DOWNLOAD_TIMEOUT = 5
+DOWNLOAD_TIMEOUT = 15
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
