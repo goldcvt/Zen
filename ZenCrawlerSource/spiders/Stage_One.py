@@ -101,7 +101,7 @@ class Channels():
                 i += 1
             if article.form and not self.form:
                 self.form = True
-            if article.streaming and not self.is_streaming:
+            if article.streaming:
                 self.is_streaming = True
 
         if i/number_of_articles >= 0.5:
@@ -128,7 +128,6 @@ class ExampleSpider(scrapy.Spider):
     start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
     def __init__(self):
-        # self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
         self.zen_conn = db_ops.connect_to_db("zen_copy", "postgres", "postgres", "127.0.0.1")
         self.logger.warning("Established spider-based connection to zen_copy")
 
