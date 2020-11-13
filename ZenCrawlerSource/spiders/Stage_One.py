@@ -175,6 +175,7 @@ class ExampleSpider(scrapy.Spider):
         # DONE return those! Items and item pipelines TODO
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
+        self.logger.warning(f"Created Channel item {chan}")
         try:
             chan.if_crawled(self.zen_conn)
             self.logger.warning(f"Checking whether {chan.url} was parsed")
