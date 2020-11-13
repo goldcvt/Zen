@@ -2,7 +2,7 @@ import scrapy
 from crawler_toolz import db_ops
 import datetime
 import re
-from ZenCrawlerSource.items import ArticleItem, ChannelItem, ZencrawlersourceItem
+from ZenCrawlerSource.items import ChannelItem, ZencrawlersourceItem
 import json
 from tqdm import tqdm
 from psycopg2 import InterfaceError
@@ -54,14 +54,15 @@ class Articles():
 
 
 class Channels():
-    arbitrage: bool
+    # arbitrage: bool
 
-    def __init__(self, subs, audience, url, links=[], articles=[], form=False, is_crawled=False, streaming=False):
+    def __init__(self, subs, audience, url, links=[], articles=[], arbitrage = False, form=False, is_crawled=False, streaming=False):
         self.subs = int(subs)
         self.audience = int(audience)
         self.url = url
         self.links = links
         self.articles = articles
+        self.arbitrage = arbitrage
         self.form = form
         self.is_crawled = is_crawled
         self.is_streaming = streaming
@@ -128,7 +129,8 @@ class ExampleSpider(scrapy.Spider):
 
     def __init__(self):
         # self.proxy_conn = db_ops.connect_to_db("proxy_db", "postgres", "postgres", "127.0.0.1")
-        self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
+        self.zen_conn = db_ops.connect_to_db("zen_copy", "postgres", "postgres", "127.0.0.1")
+        self.logger.warning("Established spider-based connection to zen_copy")
 
     def parse(self, response):
 
@@ -189,6 +191,10 @@ class ExampleSpider(scrapy.Spider):
         except InterfaceError:
             self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
             chan.if_crawled(self.zen_conn)
+            if chan.is_crawled:
+                self.logger.warning(f"{chan.url} have been parsed before")
+            else:
+                self.logger.warning(f"{chan.url} haven't been parsed before")
 
         # can move that line to top and make if statement, so we only get channels w/ articles to bd
         urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]
