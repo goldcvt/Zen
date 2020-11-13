@@ -101,7 +101,7 @@ class Channels():
                 i += 1
             if article.form and not self.form:
                 self.form = True
-            if article.streaming and not self.streaming:
+            if article.streaming and not self.is_streaming:
                 self.is_streaming = True
 
         if i/number_of_articles >= 0.5:
