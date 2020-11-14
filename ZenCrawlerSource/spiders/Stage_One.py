@@ -275,7 +275,7 @@ class ExampleSpider(scrapy.Spider):
                                 articles=channel.articles,
                                 is_arbitrage=channel.arbitrage,
                                 form=channel.form,
-                                is_crawled=channel.if_crawled,
+                                whether_crawled=channel.if_crawled,
                                 last_checked=datetime.datetime.now(),
                                 is_streaming=channel.is_streaming
         )
