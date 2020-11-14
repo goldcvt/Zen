@@ -271,7 +271,7 @@ class ExampleSpider(scrapy.Spider):
                                 channel.articles,
                                 channel.arbitrage,
                                 channel.form,
-                                vars(channel)["is_cralwed"],
+                                vars(channel)["is_cralwed"], # just doesn't work for some reason
                                 datetime.datetime.now(),
                                 channel.is_streaming
         )
