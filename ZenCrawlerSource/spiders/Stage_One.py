@@ -56,7 +56,7 @@ class Articles():
 class Channels():
     # arbitrage: bool
 
-    def __init__(self, subs, audience, url, links=[], articles=[], arbitrage = False, form=False, is_crawled=False, streaming=False):
+    def __init__(self, subs, audience, url, links=[], articles=[], arbitrage=False, form=False, is_crawled=False, streaming=False):
         self.subs = int(subs)
         self.audience = int(audience)
         self.url = url
@@ -109,8 +109,6 @@ class Channels():
         else:
             self.arbitrage = False
 
-        return self
-
     def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
         found = db_ops.read_from_db(conn, "channels", "channel_id", where="url='{}'".format(self.url))
         # DEBUG а мы что возвращаем?)
@@ -118,7 +116,7 @@ class Channels():
             self.is_crawled = False
 
         else:
-            self.is_crawled = found[0][0].translate(str.maketrans("a", "a", "()"))
+            self.is_crawled = True
 
 
 class ExampleSpider(scrapy.Spider):
@@ -276,7 +274,7 @@ class ExampleSpider(scrapy.Spider):
                                 channel.articles,
                                 channel.arbitrage,
                                 channel.form,
-                                channel.is_cralwed,
+                                vars(channel)["is_cralwed"],
                                 datetime.datetime.now(),
                                 channel.is_streaming
         )

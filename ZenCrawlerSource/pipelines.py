@@ -62,7 +62,7 @@ class ChannelPipeline:
                 conn = self.conn
                 cursor = conn.cursor()
 
-                # updating articles
+                # updating articles - needs reworking, some of these actually need updating but some need to ne written
                 for article in item["articles"]:
                     article_dict = dict(vars(article))
                     request = "UPDATE articles SET"
