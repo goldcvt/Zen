@@ -268,16 +268,16 @@ class ExampleSpider(scrapy.Spider):
     def itemize(channel):
         # articles = [ExampleSpider.article_to_item(article) for article in channel.articles]
         item = ChannelItem(
-                                channel.subs,
-                                channel.audience,
-                                channel.url,
-                                channel.links,
-                                channel.articles,
-                                channel.arbitrage,
-                                channel.form,
-                                channel.if_crawled,
-                                datetime.datetime.now(),
-                                channel.is_streaming
+                                subs=channel.subs,
+                                audience=channel.audience,
+                                url=channel.url,
+                                links=channel.links,
+                                articles=channel.articles,
+                                is_arbitrage=channel.arbitrage,
+                                form=channel.form,
+                                is_crawled=channel.if_crawled,
+                                last_checked=datetime.datetime.now(),
+                                is_streaming=channel.is_streaming
         )
         return item
 
