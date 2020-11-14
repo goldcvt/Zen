@@ -55,9 +55,9 @@ class ChannelPipeline:
             spider.logger.info("ITEM IS IN PIPELINE, PORCESSING...")
             channel_dict = item
             del channel_dict["articles"]
-            del channel_dict["is_crawled"]
+            del channel_dict["whether_crawled"]
 
-            if item["is_crawled"]:
+            if item["whether_crawled"]:
                 # doing necessary stuff, you know
                 conn = self.conn
                 cursor = conn.cursor()
@@ -68,7 +68,7 @@ class ChannelPipeline:
                     request = "UPDATE articles SET"
                     for key in article_dict.keys():
                         request += " {} = {}".format(key, article_dict[key])
-                    request += " WHERE channel_id = {};".format(item["is_crawled"])
+                    request += " WHERE channel_id = {};".format(item["whether_crawled"])
                     cursor.execute(request)
                     conn.commit()
 
