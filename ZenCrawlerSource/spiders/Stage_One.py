@@ -112,10 +112,7 @@ class Channels():
     def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
         found = db_ops.read_from_db(conn, "channels", "channel_id", where="url='{}'".format(self.url))
         # DEBUG а мы что возвращаем?)
-        if not found:
-            self.is_crawled = False
-
-        else:
+        if found:
             self.is_crawled = True
 
 
