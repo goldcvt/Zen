@@ -114,6 +114,9 @@ class Channels():
         # DEBUG а мы что возвращаем?)
         if found:
             self.is_crawled = True
+            return True
+        else:
+            return False
 
 
 class ExampleSpider(scrapy.Spider):
@@ -122,7 +125,8 @@ class ExampleSpider(scrapy.Spider):
     allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
     start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.zen_conn = db_ops.connect_to_db("zen_copy", "postgres", "postgres", "127.0.0.1")
         self.logger.warning("Established spider-based connection to zen_copy")
 
@@ -271,7 +275,7 @@ class ExampleSpider(scrapy.Spider):
                                 channel.articles,
                                 channel.arbitrage,
                                 channel.form,
-                                vars(channel)["is_cralwed"], # just doesn't work for some reason
+                                channel.if_crawled,
                                 datetime.datetime.now(),
                                 channel.is_streaming
         )
