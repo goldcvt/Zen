@@ -271,7 +271,7 @@ class ExampleSpider(scrapy.Spider):
                                 subs=channel.subs,
                                 audience=channel.audience,
                                 url=channel.url,
-                                links=channel.links,
+                                contacts=channel.links,
                                 articles=channel.articles,
                                 is_arbitrage=channel.arbitrage,
                                 form=channel.form,
