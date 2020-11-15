@@ -94,7 +94,7 @@ class ChannelPipeline:
             quantity = len(db_ops.read_from_db(conn, "articles", "id", where="channel_url={}".format(channel_url)))
 
             if channel_id and quantity == 5:
-                request = "UPDATE articles SET"
+                request = "UPDATE articles SET channel_url = {}".format(channel_url)
                 for key in item.keys():
                     request += " {} = {}".format(key, item[key])
                 request += " WHERE channel_id = {};".format(channel_id)
@@ -103,7 +103,7 @@ class ChannelPipeline:
                 conn.commit()
                 cursor.close()
             elif channel_id:
-                db_ops.write_to_db(self.conn, "articles", **item, channel_id=channel_id)
+                db_ops.write_to_db(self.conn, "articles", **item, channel_id=channel_id, channel_url=channel_url)
 
                 # we probably don't need stuff below
                 # request = "UPDATE articles SET channel_id = {} WHERE channel_url = {}".format(channel_id, channel_url)
