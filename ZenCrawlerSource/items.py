@@ -15,7 +15,6 @@ class ZencrawlersourceItem(scrapy.Item):
 
 
 class ArticleItem(scrapy.Item):
-    # channel_id = scrapy.Field()
     date = scrapy.Field()
     header = scrapy.Field()
     source_link = scrapy.Field()
@@ -30,7 +29,6 @@ class ChannelItem(scrapy.Item):
     audience = scrapy.Field()
     url = scrapy.Field()
     contacts = scrapy.Field()
-    articles = scrapy.Field()
     is_arbitrage = scrapy.Field()
     form = scrapy.Field()
     whether_crawled = scrapy.Field()
