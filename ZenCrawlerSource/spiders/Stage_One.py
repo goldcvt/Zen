@@ -2,7 +2,7 @@ import scrapy
 from crawler_toolz import db_ops
 import datetime
 import re
-from ZenCrawlerSource.items import ChannelItem, ZencrawlersourceItem
+from ZenCrawlerSource.items import ChannelItem, ArticleItem, ZencrawlersourceItem
 import json
 from tqdm import tqdm
 from psycopg2 import InterfaceError
@@ -12,7 +12,7 @@ non_arbitrage = ['instagram.com', 'twitter.com']
 
 class Articles():
 
-    def __init__(self, date, header, url, arb_link=None, arbitrage=False, streaming=False, form=False):
+    def __init__(self, date, header, url, arb_link='', arbitrage=False, streaming=False, form=False):
         self.publication_date = date
         self.header = header
         self.url = url
@@ -30,7 +30,7 @@ class Articles():
     def using_form(self, response):
         forms = response.css("div.yandex-forms-embed").get()
         streaming = response.css("div.yandex-efir-embed").get()
-        other_embeds = response.css("div.article-render__block.article-render__block_embed").get()
+        other_embeds = response.css("div.article-render__block_embed").get()
         if streaming:
             self.streaming = True
         if forms or other_embeds:
@@ -175,10 +175,10 @@ class ExampleSpider(scrapy.Spider):
             else:
                 audience = 0
                 subs = 0
-        # DONE return those! Items and item pipelines TODO
+
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
-        self.logger.warning(f"Created Channel item {chan}")
+
         try:
             chan.if_crawled(self.zen_conn)
             self.logger.warning(f"Checking whether {chan.url} was parsed")
@@ -198,11 +198,14 @@ class ExampleSpider(scrapy.Spider):
         urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]
         # CHANGE x in [:x] for different MAX amount of articles to be fetched
 
+        self.logger.warning(f"Itemizing {chan}")
+        my_item = self.itemize_channel(chan)
+        yield my_item
+
         for url in urls:
             if url.find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
                 yield response.follow(url,
-                                      callback=self.fetch_article,
-                                      cb_kwargs=dict(channel=chan, total_articles=len(urls))
+                                      callback=self.fetch_article
                                       )
         # del chan
 
@@ -225,7 +228,7 @@ class ExampleSpider(scrapy.Spider):
 
     # TODO статистика подгружается джаваскриптом... В отличии от канальной. В первой версии она не критична
 
-    def fetch_article(self, response, channel, total_articles):
+    def fetch_article(self, response):
         title = response.css("div#article__page-root h1.article__title::text").get()
         d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
         date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
@@ -246,15 +249,9 @@ class ExampleSpider(scrapy.Spider):
 
         article = Articles(date, title, response.url)
         article.is_arbitrage(response)
-        channel.articles.append(article)
+        art_item = self.itemize_article(article)
+        yield art_item
 
-        if len(channel.articles) == total_articles:
-            self.logger.warning(f"All articles fetched, itemizing channel {channel.url}")
-            channel.is_arbitrage(total_articles)
-            my_item = self.itemize(channel)
-            yield my_item
-        # raise scrapy.exceptions.CloseSpider(reason='Test completed') TODO implement constraints
-        # TODO Fix this в целом плохой перевод в айтемы, ведь по сути у нас уже есть объекты нужные
 
     def get_reads(self, response):
         resp_string = "{}".format(response.css("body p").get())
@@ -265,18 +262,31 @@ class ExampleSpider(scrapy.Spider):
 
 
     @staticmethod
-    def itemize(channel):
+    def itemize_channel(channel):
         # articles = [ExampleSpider.article_to_item(article) for article in channel.articles]
         item = ChannelItem(
                                 subs=channel.subs,
                                 audience=channel.audience,
                                 url=channel.url,
-                                contacts=channel.links,
-                                is_arbitrage=channel.arbitrage,
-                                form=channel.form,
+                                contacts=channel.links, # может вызывать проблемы
+                                # is_arbitrage=channel.arbitrage, # в целом не нужно, тут же всегда будет False
+                                # form=channel.form, # и тут
                                 whether_crawled=channel.if_crawled,
                                 last_checked=datetime.datetime.now(),
-                                is_streaming=channel.is_streaming
+                                # is_streaming=channel.is_streaming # и тут
+        )
+        return item
+
+    @staticmethod
+    def itemize_article(article):
+        item = ArticleItem(
+            date=article.publication_date,
+            header=article.header,
+            source_link=article.url,
+            arb_link=article.arb_link,
+            arbitrage=article.arbitrage,
+            form=article.form,
+            streaming=article.streaming
         )
         return item
 
