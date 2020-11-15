@@ -53,6 +53,7 @@ class ChannelPipeline:
         # doing necessary stuff, you know
         conn = self.conn
         cursor = conn.cursor()
+
         try:
             if isinstance(item, ChannelItem):  # i'm probably paranoid
 
@@ -72,8 +73,6 @@ class ChannelPipeline:
                     db_ops.write_to_db(self.conn, "channels", **item)  # write_to_db (channel)
 
                 spider.logger.info("CHANNEL ITEM PROCESSED")
-
-
 
             elif isinstance(item, ArticleItem):
                 spider.logger.info("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
@@ -101,8 +100,6 @@ class ChannelPipeline:
                     conn.commit()
                     cursor.close()
                     db_ops.write_to_db(self.conn, "articles", **item, channel_id=channel_id, channel_url=channel_url)
-
-                    # we probably don't need stuff below
                 else:
                     db_ops.write_to_db(self.conn, "articles", **item, channel_url=channel_url)
                 spider.logger.info("ARTICLE ITEM PROCESSED")
