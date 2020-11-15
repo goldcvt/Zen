@@ -58,7 +58,7 @@ class ChannelPipeline:
             if isinstance(item, ChannelItem):  # i'm probably paranoid
 
                 spider.logger.info("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
-                if item["is_crawled"]:
+                if item["whether_crawled"]:
                     #updating channel
                     request = "UPDATE channels SET"
                     for key in item.keys():
