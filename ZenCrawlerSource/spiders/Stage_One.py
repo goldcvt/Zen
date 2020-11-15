@@ -30,7 +30,7 @@ class Articles():
     def using_form(self, response):
         forms = response.css("div.yandex-forms-embed").get()
         streaming = response.css("div.yandex-efir-embed").get()
-        other_embeds = response.css("div.article-render__block_embed").get()
+        other_embeds = response.css("div.article-render__block_embed").get() # bug fixed
         if streaming:
             self.streaming = True
         if forms or other_embeds:
