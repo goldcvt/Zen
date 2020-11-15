@@ -15,4 +15,8 @@ for article in articles_to_fix:
     curs.execute()
     conn.commit()
 curs.close()
+
+# TODO ADD arbitrage_checker for channels if needed
+# new_curs = conn.cursor()
+# new_curs.close()
 conn.close()
