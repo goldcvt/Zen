@@ -29,11 +29,11 @@ class ChannelItem(scrapy.Item):
     audience = scrapy.Field()
     url = scrapy.Field()
     contacts = scrapy.Field()
-    is_arbitrage = scrapy.Field()
-    form = scrapy.Field()
+    # is_arbitrage = scrapy.Field()
+    # form = scrapy.Field()
     whether_crawled = scrapy.Field()
     last_checked = scrapy.Field()
-    is_streaming = scrapy.Field()
+    # is_streaming = scrapy.Field()
 
 
 
