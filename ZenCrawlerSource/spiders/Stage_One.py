@@ -271,7 +271,7 @@ class ExampleSpider(scrapy.Spider):
                                 contacts=channel.links, # может вызывать проблемы
                                 # is_arbitrage=channel.arbitrage, # в целом не нужно, тут же всегда будет False
                                 # form=channel.form, # и тут
-                                whether_crawled=channel.if_crawled,
+                                # whether_crawled=channel.if_crawled,
                                 last_checked=datetime.datetime.now(),
                                 # is_streaming=channel.is_streaming # и тут
         )

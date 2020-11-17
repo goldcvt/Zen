@@ -31,7 +31,7 @@ class ChannelItem(scrapy.Item):
     contacts = scrapy.Field()
     # is_arbitrage = scrapy.Field()
     # form = scrapy.Field()
-    whether_crawled = scrapy.Field()
+    # whether_crawled = scrapy.Field()
     last_checked = scrapy.Field()
     # is_streaming = scrapy.Field()
 
