@@ -62,8 +62,11 @@ class ChannelPipeline:
                     #updating channel
                     request = "UPDATE channels SET"
                     for key in item.keys():
-                        request += " {} = {}".format(key, item[key])
-                    request += " WHERE url = {}".format(item["url"])
+                        if isinstance(item[key], str):
+                            request += " {} = '{}'".format(key, item[key])
+                        else:
+                            request += " {} = {}".format(key, item[key])
+                    request += " WHERE url = '{}'".format(item["url"])
 
                     cursor.execute(request)
                     conn.commit()
@@ -75,7 +78,7 @@ class ChannelPipeline:
                 spider.logger.info("CHANNEL ITEM PROCESSED")
 
             elif isinstance(item, ArticleItem):
-                test = db_ops.read_from_db(conn, "articles", "source_link", where="source_link={}".format(item["source_link"]))[0]
+                test = db_ops.read_from_db(conn, "articles", "source_link", where="source_link='{}'".format(item["source_link"]))[0]
 
                 spider.logger.info("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
                 channel_url_array = (item["source_link"].split("?")[0]).split("/")
@@ -83,19 +86,22 @@ class ChannelPipeline:
                     channel_url = 'https://zen.yandex.ru/id/' + channel_url_array[-2]
                 else:
                     channel_url = 'https://zen.yandex.ru/' + channel_url_array[-2]
-                channel_id = db_ops.read_from_db(conn, "channels", "channel_id", where="url={}".format(channel_url))[0][0]
+                channel_id = db_ops.read_from_db(conn, "channels", "channel_id", where="url='{}'".format(channel_url))[0][0]
 
                 if channel_id and test:
-                    request = "UPDATE articles SET channel_url = {}".format(channel_url)
+                    request = "UPDATE articles SET channel_url = '{}'".format(channel_url)
                     for key in item.keys():
-                        request += " {} = {}".format(key, item[key])
+                        if isinstance(item[key], str):
+                            request += " {} = '{}'".format(key, item[key])
+                        else:
+                            request += " {} = {}".format(key, item[key])
                     request += " WHERE channel_id = {};".format(channel_id)
 
                     cursor.execute(request)
                     conn.commit()
                     cursor.close()
                 elif channel_id:
-                    request = "UPDATE articles SET channel_id = {} WHERE channel_url = {}".format(channel_id, channel_url)
+                    request = "UPDATE articles SET channel_id = {} WHERE channel_url = '{}'".format(channel_id, channel_url)
 
                     cursor.execute(request)
                     conn.commit()
