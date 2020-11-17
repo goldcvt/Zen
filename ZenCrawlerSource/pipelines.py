@@ -63,17 +63,16 @@ class ChannelPipeline:
                     request = "UPDATE channels SET"
                     for key in item.keys():
                         if isinstance(item[key], str):
-                            request += " {} = '{}'".format(key, item[key])
+                            request += " {} = '{}',".format(key, item[key])
                         else:
-                            request += " {} = {}".format(key, item[key])
+                            request += " {} = {},".format(key, item[key])
                     request += " WHERE url = '{}'".format(item["url"])
-
                     cursor.execute(request)
                     conn.commit()
-                    cursor.close()
 
                 else:
                     db_ops.write_to_db(self.conn, "channels", **item)  # write_to_db (channel)
+
 
                 spider.logger.info("CHANNEL ITEM PROCESSED")
 
@@ -92,24 +91,23 @@ class ChannelPipeline:
                     request = "UPDATE articles SET channel_url = '{}'".format(channel_url)
                     for key in item.keys():
                         if isinstance(item[key], str):
-                            request += " {} = '{}'".format(key, item[key])
+                            request += " {} = '{}',".format(key, item[key])
                         else:
-                            request += " {} = {}".format(key, item[key])
+                            request += " {} = {},".format(key, item[key])
                     request += " WHERE channel_id = {};".format(channel_id)
-
                     cursor.execute(request)
                     conn.commit()
-                    cursor.close()
-                elif channel_id:
+
+                elif channel_id and not test:
                     request = "UPDATE articles SET channel_id = {} WHERE channel_url = '{}'".format(channel_id, channel_url)
-
                     cursor.execute(request)
                     conn.commit()
-                    cursor.close()
+
                     db_ops.write_to_db(self.conn, "articles", **item, channel_id=channel_id, channel_url=channel_url)
                 else:
-                    db_ops.write_to_db(self.conn, "articles", **item, channel_url=channel_url)
-                spider.logger.info("ARTICLE ITEM PROCESSED")
+                    db_ops.write_to_db(self.conn, "articles", **item, channel_url=channel_url) # скорее всего плохо работает)
+            cursor.close()
+            spider.logger.info("ARTICLE ITEM PROCESSED")
 
         except InterfaceError:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
