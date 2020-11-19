@@ -87,11 +87,11 @@ class ChannelPipeline:
                 spider.logger.info("CHANNEL ITEM PROCESSED")
 
             elif isinstance(item, ArticleItem):
-                item["source_link"] = item["source_link"].split("?")[0]
-                test = db_ops.read_from_db(self.conn, "articles", "source_link", where="source_link=\'{}\'".format(item["source_link"]))
+                item["url"] = item["url"].split("?")[0]
+                test = db_ops.read_from_db(self.conn, "articles", "url", where="url=\'{}\'".format(item["url"]))
 
                 spider.logger.info("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
-                channel_url_array = item["source_link"].split("/")
+                channel_url_array = item["url"].split("/")
                 if 'id' in channel_url_array:
                     channel_url = 'https://zen.yandex.ru/id/' + channel_url_array[-2]
                 else:
