@@ -62,12 +62,12 @@ class ChannelPipeline:
                     #updating channel
                     request = "UPDATE channels SET ("
                     for key in item.keys():
-                        if not isinstance(item[key], list):
+                        if not isinstance(item[key], list): # it gets messy here
                             if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 request += "{} = \'{}\', ".format(key, item[key])
                             else:
                                 request += "{} = {}, ".format(key, item[key])
-                    if item["contacts"]:
+                    if item["contacts"]: # it gets messy here
                         if not isinstance(item["contacts"], list):
                             item["contacts"] = list(item["contacts"])
                         request += "contacts = ARRAY{}) WHERE url = \'{}\';".format(item["contacts"], item["url"])
@@ -80,7 +80,7 @@ class ChannelPipeline:
                     valz = ""
                     keyz = ""
                     for key in item.keys():
-                        if not isinstance(item[key], list):
+                        if not isinstance(item[key], list): # it gets messy here
                             keyz += "{}, ".format(key)
                             if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 valz += "\'{}\', ".format(item[key])
@@ -88,7 +88,7 @@ class ChannelPipeline:
                                 valz += "{}, ".format(item[key])
                     keyz = keyz[:-2]
                     valz = valz[:-2]
-                    if item["contacts"]:
+                    if item["contacts"]: # it gets messy here
                         if not isinstance(item["contacts"], list):
                             item["contacts"] = list(item["contacts"])
                         request = "INSERT INTO channels (contacts, {}) VALUES (ARRAY{}, {});".format(keyz, item["contacts"], valz)
