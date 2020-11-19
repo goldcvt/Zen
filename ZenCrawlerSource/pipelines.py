@@ -158,8 +158,8 @@ class ChannelPipeline:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(item, spider)
-        except SyntaxError:
-            self.conn.rollback()
+        # except SyntaxError:
+        #     self.conn.rollback()
 
 
         return item  # TODO CHANGE TO DELETION?
