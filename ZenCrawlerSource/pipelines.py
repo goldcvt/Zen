@@ -117,6 +117,8 @@ class ChannelPipeline:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(item, spider)
+        except Exception:
+            self.conn.rollback()
 
 
         return item  # TODO CHANGE TO DELETION?

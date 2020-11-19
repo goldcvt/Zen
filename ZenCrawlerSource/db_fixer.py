@@ -9,11 +9,16 @@ my_curs.close()
 
 curs = conn.cursor()
 for article in articles_to_fix:
-    c_url = article[0]
-    chan_id = do.read_from_db(conn, "channels", "channel_id", where="url = {}".format(c_url))[0][0]
-    request = "UPDATE articles SET channel_id = {} WHERE channel_url = {} AND channel_id = ''".format(chan_id, c_url)
-    curs.execute()
-    conn.commit()
+    try:
+        c_url = article[0]
+        chan_id = do.read_from_db(conn, "channels", "channel_id", where="url = {}".format(c_url))[0][0]
+        request = "UPDATE articles SET channel_id = {} WHERE channel_url = {} AND channel_id = ''".format(chan_id, c_url)
+        curs.execute()
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        print("We've fucked up")
+        raise AssertionError
 curs.close()
 
 # TODO ADD arbitrage_checker for channels if needed
