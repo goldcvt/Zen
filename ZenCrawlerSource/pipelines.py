@@ -68,7 +68,9 @@ class ChannelPipeline:
                             else:
                                 request += "{} = {}, ".format(key, item[key])
                     if item["contacts"]:
-                        request += "contacts = %s) WHERE url = \'{}\';".format(item["url"])
+                        if not isinstance(item["contacts"], list):
+                            item["contacts"] = list(item["contacts"])
+                        request += "contacts = ARRAY{}) WHERE url = \'{}\';".format(item["contacts"], item["url"])
                         cursor.execute(request, item["contacts"])
                     else:
                         request = request[:-2]
@@ -87,8 +89,10 @@ class ChannelPipeline:
                     keyz = keyz[:-2]
                     valz = valz[:-2]
                     if item["contacts"]:
-                        request = "INSERT INTO channels (contacts, {}) VALUES (%s, {});".format(keyz, valz)
-                        cursor.execute(request, item["contacts"])
+                        if not isinstance(item["contacts"], list):
+                            item["contacts"] = list(item["contacts"])
+                        request = "INSERT INTO channels (contacts, {}) VALUES (ARRAY{}, {});".format(keyz, item["contacts"], valz)
+                        cursor.execute(request)
                     else:
                         request = "INSERT INTO channels ({}) VALUES ({});".format(keyz, valz)
                         cursor.execute(request)
