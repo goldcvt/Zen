@@ -1,6 +1,7 @@
 from crawler_toolz import db_ops
 import datetime
-from psycopg2 import InterfaceError, errors
+from psycopg2 import InterfaceError
+from psycopg2.errors import SyntaxError
 from scrapy import signals
 from ZenCrawlerSource.items import ChannelItem, ArticleItem
 
@@ -57,21 +58,31 @@ class ChannelPipeline:
                 test = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(item["url"]))
                 cursor = self.conn.cursor()
                 spider.logger.info("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
-                # if item["whether_crawled"]: # срабатывает, когда там хуй пойми что , а не бул
                 if test:
                     #updating channel
-                    request = "UPDATE channels SET"
+                    request = "UPDATE channels SET ("
                     for key in item.keys():
                         if isinstance(item[key], str):
                             request += " {} = \'{}\',".format(key, item[key])
                         else:
                             request += " {} = {},".format(key, item[key])
-                    request += " WHERE url = \'{}\'".format(item["url"])
-                    cursor.execute(request)
-                    self.conn.commit()
-
+                        request = request[:-1] + ")"
+                    request += " WHERE url = \'{}\';".format(item["url"])
                 else:
-                    db_ops.write_to_db(self.conn, "channels", **item)  # write_to_db (channel)
+                    valz = ""
+                    keyz = ""
+                    for key in item.keys():
+                        keyz += "{}, ".format(key)
+                        if isinstance(item[key], str):
+                            valz += "\'{}\', ".format(item[key])
+                        else:
+                            valz += "{}, ".format(item[key])
+                    keyz = keyz[:-2]
+                    valz = valz[:-2]
+                    request = "INSERT INTO channels ({}) VALUES ({});".format(keyz, valz)
+
+                cursor.execute(request)
+                self.conn.commit()
 
                 spider.logger.info("CHANNEL ITEM PROCESSED")
 
@@ -85,27 +96,55 @@ class ChannelPipeline:
                     channel_url = 'https://zen.yandex.ru/id/' + channel_url_array[-2]
                 else:
                     channel_url = 'https://zen.yandex.ru/' + channel_url_array[-2]
+
                 channel_id = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(channel_url))[0][0]
                 cursor = self.conn.cursor()
+
                 if channel_id and test:
-                    request = "UPDATE articles SET channel_url = \'{}\'".format(channel_url)
+                    request = "UPDATE articles SET (channel_url = \'{}\',".format(channel_url)
                     for key in item.keys():
                         if isinstance(item[key], str):
                             request += " {} = \'{}\',".format(key, item[key])
                         else:
                             request += " {} = {},".format(key, item[key])
+                    request = request[:-1] + ')'
                     request += " WHERE channel_id = {};".format(channel_id)
+
+                elif channel_id and not test: # didn't write previously, but at this launch crawler got channel written to db
+                    # so we have channel_id
+                    request = "UPDATE articles SET channel_id = {} WHERE channel_url = \'{}\';".format(channel_id, channel_url)
+                    # update articles from this launch, set chan_id for them
+
                     cursor.execute(request)
                     self.conn.commit()
 
-                elif channel_id and not test:
-                    request = "UPDATE articles SET channel_id = {} WHERE channel_url = \'{}\'".format(channel_id, channel_url)
-                    cursor.execute(request)
-                    self.conn.commit()
+                    valz = "{}, {}, ".format(channel_id, channel_url)
+                    keyz = "channel_id, channel_url, "
+                    for key in item.keys():
+                        keyz += "{}, ".format(key)
+                        if isinstance(item[key], str):
+                            valz += "\'{}\', ".format(item[key])
+                        else:
+                            valz += "{}, ".format(item[key])
+                    keyz = keyz[:-2]
+                    valz = valz[:-2]
+                    request = "INSERT INTO articles ({}) VALUES ({});".format(keyz, valz)
 
-                    db_ops.write_to_db(self.conn, "articles", **item, channel_id=channel_id, channel_url=channel_url)
-                else:
-                    db_ops.write_to_db(self.conn, "articles", **item, channel_url=channel_url) # скорее всего плохо работает)
+                else: # know only url
+                    valz = "{}, ".format(channel_url)
+                    keyz = "channel_url, "
+                    for key in item.keys():
+                        keyz += "{}, ".format(key)
+                        if isinstance(item[key], str):
+                            valz += "\'{}\', ".format(item[key])
+                        else:
+                            valz += "{}, ".format(item[key])
+                    keyz = keyz[:-2]
+                    valz = valz[:-2]
+                    request = "INSERT INTO articles ({}) VALUES ({});".format(keyz, valz)
+
+                cursor.execute(request)
+                self.conn.commit()
             cursor.close()
             spider.logger.info("ARTICLE ITEM PROCESSED")
 
@@ -117,7 +156,7 @@ class ChannelPipeline:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(item, spider)
-        except errors.UndefinedColumn:
+        except SyntaxError:
             self.conn.rollback()
 
 
