@@ -44,11 +44,11 @@ class ChannelPipeline:
 
     def open_spider(self, spider):
         self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-        spider.logger.info(f"Opened connection with zen_copy: {self.conn}")
+        spider.logger.warning(f"Opened connection with zen_copy: {self.conn}")
 
     def close_spider(self, spider):
         self.conn.close()
-        spider.logger.info(f"Closed connection with zen_copy: {self.conn}")
+        spider.logger.warning(f"Closed connection with zen_copy: {self.conn}")
 
     def process_item(self, item, spider):
         # doing necessary stuff, you know
@@ -57,7 +57,7 @@ class ChannelPipeline:
                 item["url"] = item["url"].split("?")[0]
                 test = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(item["url"]))
                 cursor = self.conn.cursor()
-                spider.logger.info("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
+                spider.logger.warning("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
                 if test:
                     #updating channel
                     request = "UPDATE channels SET ("
@@ -92,21 +92,21 @@ class ChannelPipeline:
                         if not isinstance(item["contacts"], list):
                             item["contacts"] = list(item["contacts"])
                         request = "INSERT INTO channels (contacts, {}) VALUES (ARRAY{}, {});".format(keyz, item["contacts"], valz)
-                        spider.logger.info("CHAN | SQL REQUEST IS: " + str(cursor.mogrify(request)))
+                        spider.logger.warning("CHAN | SQL REQUEST IS: " + str(cursor.mogrify(request)))
                         cursor.execute(request)
                     else:
                         request = "INSERT INTO channels ({}) VALUES ({});".format(keyz, valz)
-                        spider.logger.info("CHAN | SQL REQUEST IS: " + str(cursor.mogrify(request)))
+                        spider.logger.warning("CHAN | SQL REQUEST IS: " + str(cursor.mogrify(request)))
                         cursor.execute(request)
                 self.conn.commit()
 
-                spider.logger.info("CHANNEL ITEM PROCESSED")
+                spider.logger.warning("CHANNEL ITEM PROCESSED")
 
             elif isinstance(item, ArticleItem):
                 item["url"] = item["url"].split("?")[0]
                 test = db_ops.read_from_db(self.conn, "articles", "url", where="url=\'{}\'".format(item["url"]))
 
-                spider.logger.info("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
+                spider.logger.warning("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
                 channel_url_array = item["url"].split("/")
                 if 'id' in channel_url_array:
                     channel_url = 'https://zen.yandex.ru/id/' + channel_url_array[-2]
@@ -163,18 +163,18 @@ class ChannelPipeline:
                     keyz = keyz[:-2]
                     valz = valz[:-2]
                     request = "INSERT INTO articles ({}) VALUES ({});".format(keyz, valz)
-                spider.logger.info("ART | SQL REQUEST IS: " + str(cursor.mogrify(request)))
+                spider.logger.warning("ART | SQL REQUEST IS: " + str(cursor.mogrify(request)))
                 cursor.execute(request)
                 self.conn.commit()
             cursor.close()
-            spider.logger.info("ARTICLE ITEM PROCESSED")
+            spider.logger.warning("ARTICLE ITEM PROCESSED")
 
         except InterfaceError:
-            spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
+            spider.logger.warning("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(item, spider)
         except AttributeError:
-            spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
+            spider.logger.warning("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(item, spider)
         # except SyntaxError:
