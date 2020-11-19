@@ -60,14 +60,20 @@ class ChannelPipeline:
                 spider.logger.info("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
                 if test:
                     #updating channel
-                    request = "UPDATE channels SET"
+                    request = "UPDATE channels SET ("
                     for key in item.keys():
                         if not isinstance(item[key], list):
                             if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
-                                request += " {} = \'{}\',".format(key, item[key])
+                                request += "{} = \'{}\', ".format(key, item[key])
                             else:
-                                request += " {} = {},".format(key, item[key])
-                    request += "contacts = %s) WHERE url = \'{}\';".format(item["url"])
+                                request += "{} = {}, ".format(key, item[key])
+                    if item["contacts"]:
+                        request += "contacts = %s) WHERE url = \'{}\';".format(item["url"])
+                        cursor.execute(request, item["contacts"])
+                    else:
+                        request = request[:-2]
+                        request += ") WHERE url = \'{}\';".format(item["url"])
+                        cursor.execute(request)
                 else:
                     valz = ""
                     keyz = ""
@@ -80,9 +86,12 @@ class ChannelPipeline:
                                 valz += "{}, ".format(item[key])
                     keyz = keyz[:-2]
                     valz = valz[:-2]
-                    request = "INSERT INTO channels (contacts, {}) VALUES (%s, {});".format(keyz, valz)
-
-                cursor.execute(request, item["contacts"])
+                    if item["contacts"]:
+                        request = "INSERT INTO channels (contacts, {}) VALUES (%s, {});".format(keyz, valz)
+                        cursor.execute(request, item["contacts"])
+                    else:
+                        request = "INSERT INTO channels ({}) VALUES ({});".format(keyz, valz)
+                        cursor.execute(request)
                 self.conn.commit()
 
                 spider.logger.info("CHANNEL ITEM PROCESSED")
