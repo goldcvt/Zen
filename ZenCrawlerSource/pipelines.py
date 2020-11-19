@@ -96,6 +96,7 @@ class ChannelPipeline:
                     else:
                         request = "INSERT INTO channels ({}) VALUES ({});".format(keyz, valz)
                         cursor.execute(request)
+                spider.logger.info("CHAN | SQL REQUEST IS: " + request)
                 self.conn.commit()
 
                 spider.logger.info("CHANNEL ITEM PROCESSED")
@@ -161,7 +162,7 @@ class ChannelPipeline:
                     keyz = keyz[:-2]
                     valz = valz[:-2]
                     request = "INSERT INTO articles ({}) VALUES ({});".format(keyz, valz)
-
+                spider.logger.info("ART | SQL REQUEST IS: " + request)
                 cursor.execute(request)
                 self.conn.commit()
             cursor.close()
