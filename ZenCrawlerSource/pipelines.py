@@ -60,20 +60,19 @@ class ChannelPipeline:
                 spider.logger.info("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
                 if test:
                     #updating channel
-                    request = "UPDATE channels SET ("
+                    request = "UPDATE channels SET"
                     for key in item.keys():
-                        if item[key] != []:
+                        if not isinstance(item[key], list):
                             if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 request += " {} = \'{}\',".format(key, item[key])
                             else:
                                 request += " {} = {},".format(key, item[key])
-                            request = request[:-1] + ")"
-                    request += " WHERE url = \'{}\';".format(item["url"])
+                    request += "contacts = %s) WHERE url = \'{}\';".format(item["url"])
                 else:
                     valz = ""
                     keyz = ""
                     for key in item.keys():
-                        if item[key] != []:
+                        if not isinstance(item[key], list):
                             keyz += "{}, ".format(key)
                             if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 valz += "\'{}\', ".format(item[key])
@@ -81,9 +80,9 @@ class ChannelPipeline:
                                 valz += "{}, ".format(item[key])
                     keyz = keyz[:-2]
                     valz = valz[:-2]
-                    request = "INSERT INTO channels ({}) VALUES ({});".format(keyz, valz)
+                    request = "INSERT INTO channels (contacts, {}) VALUES (%s, {});".format(keyz, valz)
 
-                cursor.execute(request)
+                cursor.execute(request, item["contacts"])
                 self.conn.commit()
 
                 spider.logger.info("CHANNEL ITEM PROCESSED")
@@ -107,11 +106,11 @@ class ChannelPipeline:
                 if channel_id and test:
                     request = "UPDATE articles SET (channel_url = \'{}\',".format(channel_url)
                     for key in item.keys():
-                        if item[key] != []:
-                            if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
-                                request += " {} = \'{}\',".format(key, item[key])
-                            else:
-                                request += " {} = {},".format(key, item[key])
+                        # if not isinstance(item[key], list):
+                        if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
+                            request += " {} = \'{}\',".format(key, item[key])
+                        else:
+                            request += " {} = {},".format(key, item[key])
                     request = request[:-1] + ')'
                     request += " WHERE channel_id = {};".format(channel_id)
 
@@ -126,12 +125,12 @@ class ChannelPipeline:
                     valz = "{}, {}, ".format(channel_id, channel_url)
                     keyz = "channel_id, channel_url, "
                     for key in item.keys():
-                        if item[key] != []:
-                            keyz += "{}, ".format(key)
-                            if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
-                                valz += "\'{}\', ".format(item[key])
-                            else:
-                                valz += "{}, ".format(item[key])
+                        # if not isinstance(item[key], list):
+                        keyz += "{}, ".format(key)
+                        if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
+                            valz += "\'{}\', ".format(item[key])
+                        else:
+                            valz += "{}, ".format(item[key])
                     keyz = keyz[:-2]
                     valz = valz[:-2]
                     request = "INSERT INTO articles ({}) VALUES ({});".format(keyz, valz)
@@ -140,6 +139,7 @@ class ChannelPipeline:
                     valz = "{}, ".format(channel_url)
                     keyz = "channel_url, "
                     for key in item.keys():
+                        # if not isinstance(item[key], list):
                         keyz += "{}, ".format(key)
                         if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                             valz += "\'{}\', ".format(item[key])
