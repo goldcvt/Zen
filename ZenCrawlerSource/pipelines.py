@@ -54,7 +54,7 @@ class ChannelPipeline:
         try:
             if isinstance(item, ChannelItem):
                 item["url"] = item["url"].split("?")[0]
-                test = db_ops.read_from_db(self.conn, "channels", "channel_id", where="channel_url=\'{}\'".format(item["url"]))[0]
+                test = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(item["url"]))[0]
                 cursor = self.conn.cursor()
                 spider.logger.info("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
                 # if item["whether_crawled"]: # срабатывает, когда там хуй пойми что , а не бул
