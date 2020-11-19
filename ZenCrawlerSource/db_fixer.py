@@ -17,6 +17,7 @@ for article in articles_to_fix:
         conn.commit()
     except Exception:
         conn.rollback()
+        curs.close()
         print("We've fucked up")
         raise AssertionError
 curs.close()
