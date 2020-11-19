@@ -63,7 +63,7 @@ class ChannelPipeline:
                     request = "UPDATE channels SET ("
                     for key in item.keys():
                         if item[key] != []:
-                            if isinstance(item[key], str):
+                            if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 request += " {} = \'{}\',".format(key, item[key])
                             else:
                                 request += " {} = {},".format(key, item[key])
@@ -75,7 +75,7 @@ class ChannelPipeline:
                     for key in item.keys():
                         if item[key] != []:
                             keyz += "{}, ".format(key)
-                            if isinstance(item[key], str):
+                            if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 valz += "\'{}\', ".format(item[key])
                             else:
                                 valz += "{}, ".format(item[key])
@@ -108,7 +108,7 @@ class ChannelPipeline:
                     request = "UPDATE articles SET (channel_url = \'{}\',".format(channel_url)
                     for key in item.keys():
                         if item[key] != []:
-                            if isinstance(item[key], str):
+                            if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 request += " {} = \'{}\',".format(key, item[key])
                             else:
                                 request += " {} = {},".format(key, item[key])
@@ -128,7 +128,7 @@ class ChannelPipeline:
                     for key in item.keys():
                         if item[key] != []:
                             keyz += "{}, ".format(key)
-                            if isinstance(item[key], str):
+                            if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                                 valz += "\'{}\', ".format(item[key])
                             else:
                                 valz += "{}, ".format(item[key])
@@ -141,7 +141,7 @@ class ChannelPipeline:
                     keyz = "channel_url, "
                     for key in item.keys():
                         keyz += "{}, ".format(key)
-                        if isinstance(item[key], str):
+                        if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                             valz += "\'{}\', ".format(item[key])
                         else:
                             valz += "{}, ".format(item[key])
