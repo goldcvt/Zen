@@ -92,11 +92,11 @@ class ChannelPipeline:
                         if not isinstance(item["contacts"], list):
                             item["contacts"] = list(item["contacts"])
                         request = "INSERT INTO channels (contacts, {}) VALUES (ARRAY{}, {});".format(keyz, item["contacts"], valz)
-                        spider.logger.info("CHAN | SQL REQUEST IS: " + cursor.mogrify(request))
+                        spider.logger.info("CHAN | SQL REQUEST IS: " + str(cursor.mogrify(request)))
                         cursor.execute(request)
                     else:
                         request = "INSERT INTO channels ({}) VALUES ({});".format(keyz, valz)
-                        spider.logger.info("CHAN | SQL REQUEST IS: " + cursor.mogrify(request))
+                        spider.logger.info("CHAN | SQL REQUEST IS: " + str(cursor.mogrify(request)))
                         cursor.execute(request)
                 self.conn.commit()
 
@@ -163,7 +163,7 @@ class ChannelPipeline:
                     keyz = keyz[:-2]
                     valz = valz[:-2]
                     request = "INSERT INTO articles ({}) VALUES ({});".format(keyz, valz)
-                spider.logger.info("ART | SQL REQUEST IS: " + cursor.mogrify(request))
+                spider.logger.info("ART | SQL REQUEST IS: " + str(cursor.mogrify(request)))
                 cursor.execute(request)
                 self.conn.commit()
             cursor.close()
