@@ -128,7 +128,7 @@ class ExampleSpider(scrapy.Spider):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.zen_conn = db_ops.connect_to_db("zen_copy", "postgres", "postgres", "127.0.0.1")
-        self.logger.warning("Established spider-based connection to zen_copy")
+        self.logger.info("Established spider-based connection to zen_copy")
 
     def parse(self, response):
 
@@ -158,7 +158,7 @@ class ExampleSpider(scrapy.Spider):
                     yield response.follow(chan, callback=self.parse_channel)
 
     def parse_channel(self, response): # DONE перевели на классы - TODO
-        self.logger.warning("Channel name: " + response.css("div.zen-app div.channel-header-view-desktop__info-block h1 span::text").get())
+        self.logger.info("Channel name: " + response.css("div.zen-app div.channel-header-view-desktop__info-block h1 span::text").get())
         default_stats = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__value::text").getall()
         stat_kword = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__name::text").get()
         # DONE implemented PC UA TODO
@@ -181,24 +181,24 @@ class ExampleSpider(scrapy.Spider):
 
         try:
             chan.if_crawled(self.zen_conn)
-            self.logger.warning(f"Checking whether {chan.url} was parsed")
+            self.logger.info(f"Checking whether {chan.url} was parsed")
             if chan.is_crawled:
-                self.logger.warning(f"{chan.url} have been parsed before")
+                self.logger.info(f"{chan.url} have been parsed before")
             else:
-                self.logger.warning(f"{chan.url} haven't been parsed before")
+                self.logger.info(f"{chan.url} haven't been parsed before")
         except InterfaceError:
             self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
             chan.if_crawled(self.zen_conn)
             if chan.is_crawled:
-                self.logger.warning(f"{chan.url} have been parsed before")
+                self.logger.info(f"{chan.url} have been parsed before")
             else:
-                self.logger.warning(f"{chan.url} haven't been parsed before")
+                self.logger.info(f"{chan.url} haven't been parsed before")
 
         # can move that line to top and make if statement, so we only get channels w/ articles to bd
         urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]
         # CHANGE x in [:x] for different MAX amount of articles to be fetched
 
-        self.logger.warning(f"Itemizing {chan}")
+        self.logger.info(f"Itemizing {chan}")
         my_item = self.itemize_channel(chan)
         yield my_item
 
@@ -360,7 +360,7 @@ class SecondLevelSpider(scrapy.Spider):
     def parse(self, response):
         for a in response.css("div.alphabet__list a.alphabet__item::attr(href)").getall():
             if a != "media/zen/channels":
-                self.logger.warning("Parsing letter: " + a)
+                self.logger.info("Parsing letter: " + a)
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=False)
 
     def parse_by_letter(self, response):
@@ -389,10 +389,10 @@ class SecondLevelSpider(scrapy.Spider):
         # for chan in chans:
         name = response.css("div.app-redesign-view__main-container div.desktop-channel-2-top__title::text").get()
         if name:
-            self.logger.warning("Processing channel: " + name)
+            self.logger.info("Processing channel: " + name)
             item = ZencrawlersourceItem(channel_name=name, channel_url=response.url)
         else:
-            self.logger.warning("Processing channel with blank name: " + response.url)
+            self.logger.info("Processing channel with blank name: " + response.url)
             item = ZencrawlersourceItem(channel_name="NoneThing", channel_url=response.url)
         yield item
 
@@ -419,7 +419,7 @@ class TestSpider(scrapy.Spider):
 
     def parse_from_page(self, response):
         chans = response.css("a.channel-item__link::attr(href)").getall()
-        self.logger.warning(chans)
+        self.logger.info(chans)
         with open('chans.txt', 'a') as f:
             f.write(chans)
 
