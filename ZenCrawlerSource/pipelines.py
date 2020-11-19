@@ -1,6 +1,6 @@
 from crawler_toolz import db_ops
 import datetime
-from psycopg2 import InterfaceError
+from psycopg2 import InterfaceError, errors
 from scrapy import signals
 from ZenCrawlerSource.items import ChannelItem, ArticleItem
 
@@ -117,7 +117,7 @@ class ChannelPipeline:
             spider.logger.info("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             self.process_item(item, spider)
-        except Exception:
+        except errors.UndefinedColumn:
             self.conn.rollback()
 
 
