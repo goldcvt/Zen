@@ -282,7 +282,7 @@ class ExampleSpider(scrapy.Spider):
         item = ArticleItem(
             date=article.publication_date,
             header=article.header,
-            source_link=article.url,
+            url=article.url,
             arb_link=article.arb_link,
             arbitrage=article.arbitrage,
             form=article.form,

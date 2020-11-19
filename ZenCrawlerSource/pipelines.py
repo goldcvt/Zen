@@ -97,7 +97,9 @@ class ChannelPipeline:
                 else:
                     channel_url = 'https://zen.yandex.ru/' + channel_url_array[-2]
 
-                channel_id = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(channel_url))[0][0]
+                channel_id = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(channel_url))
+                if channel_id:
+                    channel_id = channel_id[0][0]
                 cursor = self.conn.cursor()
 
                 if channel_id and test:

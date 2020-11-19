@@ -17,7 +17,7 @@ class ZencrawlersourceItem(scrapy.Item):
 class ArticleItem(scrapy.Item):
     date = scrapy.Field()
     header = scrapy.Field()
-    source_link = scrapy.Field()
+    url = scrapy.Field()
     arb_link = scrapy.Field()
     arbitrage = scrapy.Field()
     form = scrapy.Field()
