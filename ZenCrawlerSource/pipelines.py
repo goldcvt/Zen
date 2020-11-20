@@ -60,7 +60,7 @@ class ChannelPipeline:
                 spider.logger.warning("CHANNEL ITEM IS IN PIPELINE, PROCESSING...")
                 if test:
                     #updating channel
-                    request = "UPDATE channels SET ("
+                    request = "UPDATE channels SET "
                     for key in item.keys():
                         if not isinstance(item[key], list): # it gets messy here
                             if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
@@ -70,11 +70,11 @@ class ChannelPipeline:
                     if item["contacts"]: # it gets messy here
                         if not isinstance(item["contacts"], list):
                             item["contacts"] = list(item["contacts"])
-                        request += "contacts=ARRAY{}) WHERE url=\'{}\';".format(item["contacts"], item["url"])
+                        request += "contacts=ARRAY{} WHERE url=\'{}\';".format(item["contacts"], item["url"])
                         cursor.execute(request, item["contacts"])
                     else:
                         request = request[:-2]
-                        request += ") WHERE url=\'{}\';".format(item["url"])
+                        request += " WHERE url=\'{}\';".format(item["url"])
                         cursor.execute(request)
                 else:
                     valz = ""
@@ -119,14 +119,14 @@ class ChannelPipeline:
                 cursor = self.conn.cursor()
 
                 if channel_id and test:
-                    request = "UPDATE articles SET (channel_url=\'{}\',".format(channel_url)
+                    request = "UPDATE articles SET channel_url=\'{}\',".format(channel_url)
                     for key in item.keys():
                         # if not isinstance(item[key], list):
                         if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
                             request += " {}=\'{}\',".format(key, item[key])
                         else:
                             request += " {}={},".format(key, item[key])
-                    request = request[:-1] + ')'
+                    request = request[:-1]
                     request += " WHERE channel_id={};".format(channel_id)
 
                 elif channel_id and not test: # didn't write previously, but at this launch crawler got channel written to db
