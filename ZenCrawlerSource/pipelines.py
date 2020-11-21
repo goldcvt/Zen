@@ -109,9 +109,9 @@ class ChannelPipeline:
                 spider.logger.warning("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
                 channel_url_array = item["url"].split("/")
                 if 'id' in channel_url_array: # может какой-то левый тип данных в channel_url? псевдострока или вообще iterable
-                    channel_url = str('https://zen.yandex.ru/id/' + channel_url_array[-2])
+                    channel_url = 'https://zen.yandex.ru/id/' + channel_url_array[-2]
                 else:
-                    channel_url = str('https://zen.yandex.ru/' + channel_url_array[-2])
+                    channel_url = 'https://zen.yandex.ru/' + channel_url_array[-2]
 
                 channel_id = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(channel_url))
                 if channel_id:
@@ -137,7 +137,7 @@ class ChannelPipeline:
                     cursor.execute(request)
                     self.conn.commit()
 
-                    valz = "{}, {}, ".format(channel_id, channel_url)
+                    valz = "{}, \'{}\', ".format(channel_id, channel_url)
                     keyz = "channel_id, channel_url, "
                     for key in item.keys():
                         # if not isinstance(item[key], list):
@@ -151,7 +151,7 @@ class ChannelPipeline:
                     request = "INSERT INTO articles ({}) VALUES ({});".format(keyz, valz)
 
                 else: # know only url
-                    valz = "{}, ".format(channel_url)
+                    valz = "\'{}\', ".format(channel_url)
                     keyz = "channel_url, "
                     for key in item.keys():
                         # if not isinstance(item[key], list):
