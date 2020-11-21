@@ -175,10 +175,12 @@ class ChannelPipeline:
         except InterfaceError:
             spider.logger.warning("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            self.conn.set_client_encoding('UTF8')
             self.process_item(item, spider)
         except AttributeError:
             spider.logger.warning("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            self.conn.set_client_encoding('UTF8')
             self.process_item(item, spider)
         # except SyntaxError:
         #     self.conn.rollback()
