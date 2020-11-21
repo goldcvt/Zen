@@ -12,7 +12,7 @@ non_arbitrage = ['instagram.com', 'twitter.com']
 
 class Articles():
 
-    def __init__(self, date, header, url, arb_link='', arbitrage=False, streaming=False, form=False):
+    def __init__(self, date, header, url, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False):
         self.publication_date = date
         self.header = header
         self.url = url
@@ -20,6 +20,7 @@ class Articles():
         self.arbitrage = arbitrage
         self.form = form
         self.streaming = streaming
+        self.zen_related = zen_related
 
     def __str__(self):
         return f'{str(vars(self))}'
@@ -50,6 +51,8 @@ class Articles():
         if if_p or if_blockquote and (not tmp):
             self.arbitrage = True
             self.arb_link = if_p or if_blockquote # питонно пиздец)
+            if self.arb_link.find("zen.yandex.ru") != -1:
+                self.zen_related = True
         self.using_form(response)
 
 
@@ -286,7 +289,8 @@ class ExampleSpider(scrapy.Spider):
             arb_link=article.arb_link,
             arbitrage=article.arbitrage,
             form=article.form,
-            streaming=article.streaming
+            streaming=article.streaming,
+            zen_related=article.zen_related
         )
         return item
 

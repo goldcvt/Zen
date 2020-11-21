@@ -22,6 +22,7 @@ class ArticleItem(scrapy.Item):
     arbitrage = scrapy.Field()
     form = scrapy.Field()
     streaming = scrapy.Field()
+    zen_related = scrapy.Field()
 
 
 class ChannelItem(scrapy.Item):
