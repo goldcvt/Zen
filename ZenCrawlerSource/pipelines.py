@@ -104,6 +104,8 @@ class ChannelPipeline:
 
             elif isinstance(item, ArticleItem):
                 item["url"] = item["url"].split("?")[0]
+                if item["arb_link"]:
+                    item["arb_link"] = item["arb_link"].split("?")[0]
                 test = db_ops.read_from_db(self.conn, "articles", "url", where="url=\'{}\'".format(item["url"]))
 
                 spider.logger.warning("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
