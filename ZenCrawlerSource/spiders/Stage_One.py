@@ -128,10 +128,10 @@ class ExampleSpider(scrapy.Spider):
     allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
     start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.zen_conn = db_ops.connect_to_db("zen_copy", "postgres", "postgres", "127.0.0.1")
-        self.logger.info("Established spider-based connection to zen_copy")
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+    #     self.zen_conn = db_ops.connect_to_db("zen_copy", "postgres", "postgres", "127.0.0.1")
+    #     self.logger.info("Established spider-based connection to zen_copy")
 
     def parse(self, response):
 
@@ -182,20 +182,20 @@ class ExampleSpider(scrapy.Spider):
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
 
-        try:
-            chan.if_crawled(self.zen_conn)
-            self.logger.info(f"Checking whether {chan.url} was parsed")
-            if chan.is_crawled:
-                self.logger.info(f"{chan.url} have been parsed before")
-            else:
-                self.logger.info(f"{chan.url} haven't been parsed before")
-        except InterfaceError:
-            self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
-            chan.if_crawled(self.zen_conn)
-            if chan.is_crawled:
-                self.logger.info(f"{chan.url} have been parsed before")
-            else:
-                self.logger.info(f"{chan.url} haven't been parsed before")
+        # try:
+        #     chan.if_crawled(self.zen_conn)
+        #     self.logger.info(f"Checking whether {chan.url} was parsed")
+        #     if chan.is_crawled:
+        #         self.logger.info(f"{chan.url} have been parsed before")
+        #     else:
+        #         self.logger.info(f"{chan.url} haven't been parsed before")
+        # except InterfaceError:
+        #     self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
+        #     chan.if_crawled(self.zen_conn)
+        #     if chan.is_crawled:
+        #         self.logger.info(f"{chan.url} have been parsed before")
+        #     else:
+        #         self.logger.info(f"{chan.url} haven't been parsed before")
 
         # can move that line to top and make if statement, so we only get channels w/ articles to bd
         urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]

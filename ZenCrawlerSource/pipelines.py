@@ -44,6 +44,7 @@ class ChannelPipeline:
 
     def open_spider(self, spider):
         self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+        self.conn.set_client_encoding('UTF8')
         spider.logger.warning(f"Opened connection with zen_copy: {self.conn}")
 
     def close_spider(self, spider):
