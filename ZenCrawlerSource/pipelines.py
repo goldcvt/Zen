@@ -108,10 +108,10 @@ class ChannelPipeline:
 
                 spider.logger.warning("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
                 channel_url_array = item["url"].split("/")
-                if 'id' in channel_url_array:
-                    channel_url = 'https://zen.yandex.ru/id/' + channel_url_array[-2]
+                if 'id' in channel_url_array: # может какой-то левый тип данных в channel_url? псевдострока или вообще iterable
+                    channel_url = str('https://zen.yandex.ru/id/' + channel_url_array[-2])
                 else:
-                    channel_url = 'https://zen.yandex.ru/' + channel_url_array[-2]
+                    channel_url = str('https://zen.yandex.ru/' + channel_url_array[-2])
 
                 channel_id = db_ops.read_from_db(self.conn, "channels", "channel_id", where="url=\'{}\'".format(channel_url))
                 if channel_id:
