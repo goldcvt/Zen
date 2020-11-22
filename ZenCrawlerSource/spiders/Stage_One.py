@@ -340,7 +340,8 @@ class ExampleSpider(scrapy.Spider):
         return final_date
     
     def closed(self, reason):
-        self.zen_conn.close()
+        self.logger.warning("All done, master")
+    #   self.zen_conn.close()
     #   self.proxy_conn.close()
 
     # return True, если всё нормально. Иначе false
