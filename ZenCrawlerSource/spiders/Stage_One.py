@@ -232,7 +232,7 @@ class ExampleSpider(scrapy.Spider):
     # TODO статистика подгружается джаваскриптом... В отличии от канальной. В первой версии она не критична
 
     def fetch_article(self, response):
-        title = response.css("div#article__page-root h1.article__title::text").get()
+        title = response.css("div#article__page-root h1.article__title::text").get().replace("'", "")
         d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
         date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
         if d_str:
