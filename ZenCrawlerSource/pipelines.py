@@ -72,7 +72,7 @@ class ChannelPipeline:
                         if not isinstance(item["contacts"], list):
                             item["contacts"] = list(item["contacts"])
                         request += "contacts=ARRAY{} WHERE url=\'{}\';".format(item["contacts"], item["url"])
-                        cursor.execute(request, item["contacts"])
+                        cursor.execute(request)
                     else:
                         request = request[:-2]
                         request += " WHERE url=\'{}\';".format(item["url"])
