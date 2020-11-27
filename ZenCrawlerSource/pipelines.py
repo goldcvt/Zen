@@ -14,7 +14,12 @@ from ZenCrawlerSource.items import ChannelItem, ArticleItem
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-
+class SpeedTestPipeline:
+    def process_item(self, item, spider):
+        if isinstance(item, ArticleItem):
+            spider.logger.info("PIPELINE ARTICLE: " + item["url"])
+        if isinstance(item, ChannelItem):
+            spider.logger.info("PIPELINE CHANNEL: " + item["url"])
 
 class ZencrawlersourcePipeline:
     def process_item(self, item, spider):
