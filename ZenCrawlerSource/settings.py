@@ -82,7 +82,8 @@ DUPEFILTER_DEBUG = False
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
-    'ZenCrawlerSource.pipelines.ChannelPipeline': 150
+    # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150,
+    'ZenCrawlerSource.pipelines.SpeedTestPipeline': 150
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -109,7 +110,7 @@ RETRY_ENABLED = False
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
 # пайплайне
 # CLOSESPIDER_ITEMCOUNT = 10
-CLOSESPIDER_TIMEOUT = 72000
+CLOSESPIDER_TIMEOUT = 720000
 
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'

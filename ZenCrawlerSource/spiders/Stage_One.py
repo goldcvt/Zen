@@ -166,8 +166,8 @@ class ExampleSpider(scrapy.Spider):
         stat_kword = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__name::text").get()
         # DONE implemented PC UA TODO
         if len(default_stats) == 2:
-            subs = int("".join(("".join(default_stats[0].split("<"))).split(" ")))
-            audience = int("".join(("".join(default_stats[1].split("<"))).split(" ")))
+            audience = int("".join(("".join(default_stats[0].split("<"))).split(" ")))
+            subs = int("".join(("".join(default_stats[1].split("<"))).split(" ")))
         else:
             if stat_kword.find("одписч") != -1:
                 subs = int("".join(("".join(default_stats[0].split("<"))).split(" ")))
