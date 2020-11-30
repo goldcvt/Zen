@@ -28,7 +28,7 @@ CONCURRENT_REQUESTS = 100
 #DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
-CONCURRENT_REQUESTS_PER_IP = 50
+CONCURRENT_REQUESTS_PER_IP = 100
 
 # Disable cookies (enabled by default)
 COOKIES_ENABLED = False  # just in case, y'know
@@ -88,7 +88,7 @@ ITEM_PIPELINES = {
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_ENABLED = False
 # The initial download delay
 AUTOTHROTTLE_START_DELAY = 0.5
 # The maximum download delay to be set in case of high latencies
@@ -97,7 +97,7 @@ AUTOTHROTTLE_MAX_DELAY = 1
 # each remote server
 AUTOTHROTTLE_TARGET_CONCURRENCY = 50
 # Enable showing throttling stats for every response received:
-AUTOTHROTTLE_DEBUG = True
+AUTOTHROTTLE_DEBUG = False
 
 HTTPERROR_ALLOWED_CODES = []  # actually, spider doesn't get non-200 responses to parse, downloader still works tho
 
