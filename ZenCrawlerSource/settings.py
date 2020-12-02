@@ -20,7 +20,7 @@ NEWSPIDER_MODULE = 'ZenCrawlerSource.spiders'
 ROBOTSTXT_OBEY = False
 
 #Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 100
+CONCURRENT_REQUESTS = 200
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -28,7 +28,7 @@ CONCURRENT_REQUESTS = 100
 #DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
-CONCURRENT_REQUESTS_PER_IP = 100
+CONCURRENT_REQUESTS_PER_IP = 50
 
 # Disable cookies (enabled by default)
 COOKIES_ENABLED = False  # just in case, y'know
@@ -58,8 +58,8 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
-    # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
-    'ZenCrawlerSource.middlewares.OnlyExceptionsProxified': 120,
+    'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
+    # 'ZenCrawlerSource.middlewares.OnlyExceptionsProxified': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }

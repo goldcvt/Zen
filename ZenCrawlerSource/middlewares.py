@@ -209,7 +209,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
 
     def process_response(self, request, response, spider):
         spider.logger.warning(f"Response status is {response.status}")
-        if response.url.find("zen.yandex.ru/id/") != -1:
+        if response.url.find("zen.yandex.ru/id/") != -1 and response.url.find("zen.yandex.ru/media") == -1: # test w/ TOR TODO
             global chans_processed
             chans_processed += 1
             spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
@@ -217,13 +217,24 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         # 4xx errors handler
         if response.status == 200:
             return response
-        elif response.status in [407, 409, 500, 501, 502, 503, 508]:
-            proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-            request.meta['proxy'] = ''
-            return request
-        else: # то есть нужно по-хорошему тестить уже на дзенчике, вдруг умники с яндекса
-            # отдадут вечный 3хх или 404) ну посмотрим, посмотрим
+        elif response.status in [407, 409, 500, 501, 502, 503, 508, 301, 302, 307, 303, 304]:
+
+            if 'proxy' in request.meta:  # checks that key exists
+                if request.meta['proxy'] != '':
+                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                return request
+            else:
+                request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                return request
+
+        elif response.status == 404:
             return response
+
+        else:  # то есть нужно по-хорошему тестить уже на дзенчике, вдруг умники с яндекса
+            # отдадут вечный 3хх или 404) ну посмотрим, посмотрим
+            # или бляццкую пустую страницу
+            raise Exception
 
     def process_exception(self, request, exception, spider):
         try:
