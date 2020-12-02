@@ -209,7 +209,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
 
     def process_response(self, request, response, spider):
         spider.logger.warning(f"Response status is {response.status}")
-        if response.url.find("zen.yandex.ru/id/") != -1 and response.url.find("zen.yandex.ru/media") == -1: # test w/ TOR TODO
+        if response.url.find("zen.yandex.ru/") != -1 and response.url.find("zen.yandex.ru/media") == -1: # test w/ TOR TODO
             global chans_processed
             chans_processed += 1
             spider.logger.warning("Processed %i channel(s) out of 340.000, that's about %F percent done"
