@@ -7,20 +7,23 @@ import json
 from tqdm import tqdm
 from psycopg2 import InterfaceError
 
-non_arbitrage = ['instagram.com', 'twitter.com']
+non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', 'vimeo', 'youtube', 'vk']
 
 
-class Articles():
+class Articles:
 
-    def __init__(self, date, header, url, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False):
+    def __init__(self, date, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False, using_direct=False):
         self.publication_date = date
         self.header = header
         self.url = url
+        self.views = views
+        self.reads = reads
         self.arb_link = arb_link
         self.arbitrage = arbitrage
         self.form = form
         self.streaming = streaming
         self.zen_related = zen_related
+        self.using_direct = using_direct
 
     def __str__(self):
         return f'{str(vars(self))}'
@@ -31,33 +34,41 @@ class Articles():
     def using_form(self, response):
         forms = response.css("div.yandex-forms-embed").get()
         streaming = response.css("div.yandex-efir-embed").get()
-        other_embeds = response.css("div.article-render__block_embed").get() # bug fixed
+        y_music = response.css("div.yandex-music-embed").get()
+        yt = response.css("div.youtube-embed").get()
+        kino = response.css("div.kinopoisk-embed").get()
+        y_direct = response.css("div.yandex-direct-embed").get()
+        other_embeds = response.css("div.article-render__block_embed").getall() # bug fixed
+        if y_direct:
+            self.using_direct = True
+        if len(other_embeds) == 1 and y_direct:
+            other_embeds = None
         if streaming:
             self.streaming = True
-        if forms or other_embeds:
+        elif (not (y_music or kino or yt)) and (forms or other_embeds):
             self.form = True
             self.arbitrage = True
 
     def is_arbitrage(self, response): # checks straight-up links
-        if_p = response.css("p.article-render__block a.article-link::attr(href)").get()
-        if_blockquote = response.css("blockquote.article-render__block a.article-link::attr(href)").get()
+        if_p = response.css("p.article-render__block a.article-link::attr(href)").get() or "a"
+        if_blockquote = response.css("blockquote.article-render__block a.article-link::attr(href)").get() or "a"
+        if_header = response.css("h2.article-render__block a.article-link::attr(href)").get() or response.css("h3.article-render__block a.article-link::attr(href)").get() or "a"
         tmp = False
 
-        # for i in non_arbitrage: # TODO откомментить, если много мусора ссылочного
-        #     if if_p.find(i) != -1 or if_blockquote.find(i) != -1:
-        #         tmp = True
-        #         break
+        for i in non_arbitrage: # проверка на ссылочный мусор
+            if (if_p + if_blockquote + if_header).find(i) != -1:
+                tmp = True
+                break
 
-        if if_p or if_blockquote and (not tmp):
+        if if_p or if_blockquote or if_header and (not tmp):
             self.arbitrage = True
-            self.arb_link = if_p or if_blockquote # питонно пиздец)
+            self.arb_link = if_p or if_blockquote or if_header# питонно пиздец)
             if self.arb_link.find("zen.yandex.ru") != -1:
                 self.zen_related = True
         self.using_form(response)
 
 
-class Channels():
-    # arbitrage: bool
+class Channels:
 
     def __init__(self, subs, audience, url, links=[], articles=[], arbitrage=False, form=False, is_crawled=False, streaming=False):
         self.subs = int(subs)
@@ -232,51 +243,47 @@ class ExampleSpider(scrapy.Spider):
     # TODO статистика подгружается джаваскриптом... В отличии от канальной. В первой версии она не критична
 
     def fetch_article(self, response):
-        title = response.css("div#article__page-root h1.article__title::text").get().replace("'", "")
+        title = response.css("div#article__page-root h1.article__title::text").get()
+        if title:
+            title = title.replace("'", "")
         d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
         date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
         if d_str:
             date = ExampleSpider.get_date(d_str)
-        # url = response.url
-        # if url.find("/id/") != -1:  # TODO change items accordingly. Move everything about article to
-        #  get_reads or
-        #     # TODO find a way to get actual reads and views
-        #     art_id = "".join(url.split("-")[-1])
-        #     author_id = "".join(url.split("/")[-2])
-        #     reads, views = response.follow(f"https://zen.yandex.ru/media-api/
-        #     publication-view-stat?publicationId={art_id}" +
-        #                                    f"&publisherId={author_id}", callback=self.get_reads)
-        # else:
-        #
-        #     pass # have to use JS :(
-
         article = Articles(date, title, response.url)
         article.is_arbitrage(response)
+
+        pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
+        views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
+
+        try:
+            yield response.follow(views_req_url, callback=self.get_reads, cb_kwargs=dict(article=article, article_url=response.url))
+        except Exception:
+            art_item = self.itemize_article(article)
+            yield art_item
+
+    def get_reads(self, response, article, article_url):
+        resp_string = "{}".format(response.css("body p").get())
+        my_dict = json.loads(resp_string)
+        reads = -1
+        views = -1
+        if my_dict:
+            reads = my_dict["viewsTillEnd"]
+            views = my_dict["views"]
+        article.reads = reads
+        article.views = views
         art_item = self.itemize_article(article)
         yield art_item
 
 
-    def get_reads(self, response):
-        resp_string = "{}".format(response.css("body p").get())
-        my_dict = json.loads(resp_string)
-        reads = my_dict["viewsTillEnd"]
-        views = my_dict["views"]
-        return reads, views
-
-
     @staticmethod
     def itemize_channel(channel):
-        # articles = [ExampleSpider.article_to_item(article) for article in channel.articles]
         item = ChannelItem(
                                 subs=channel.subs,
                                 audience=channel.audience,
                                 url=channel.url,
                                 contacts=channel.links, # может вызывать проблемы
-                                # is_arbitrage=channel.arbitrage, # в целом не нужно, тут же всегда будет False
-                                # form=channel.form, # и тут
-                                # whether_crawled=channel.if_crawled,
-                                last_checked=datetime.datetime.now(),
-                                # is_streaming=channel.is_streaming # и тут
+                                last_checked=datetime.datetime.now()
         )
         return item
 
@@ -286,6 +293,8 @@ class ExampleSpider(scrapy.Spider):
             date=article.publication_date,
             header=article.header,
             url=article.url,
+            views=article.views,
+            reads=article.reads,
             arb_link=article.arb_link,
             arbitrage=article.arbitrage,
             form=article.form,
