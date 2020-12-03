@@ -111,7 +111,7 @@ class ChannelPipeline:
             elif isinstance(item, ArticleItem):
                 item["url"] = item["url"].split("?")[0]
                 if item["arb_link"]:
-                    item["arb_link"] = item["arb_link"].split("?")[0][:399].replace("'", "")
+                    item["arb_link"] = item["arb_link"].split("?")[0][:2000].replace("'", "")
                 test = db_ops.read_from_db(self.conn, "articles", "url", where="url=\'{}\'".format(item["url"]))
 
                 spider.logger.warning("ARTICLE ITEM IS IN PIPELINE, PROCESSING...")
@@ -126,7 +126,7 @@ class ChannelPipeline:
                     channel_id = channel_id[0][0]
                 cursor = self.conn.cursor()
 
-                if channel_id and test:
+                if channel_id and test: # что здесь вообще происходит?)
                     request = "UPDATE articles SET channel_url=\'{}\',".format(channel_url)
                     for key in item.keys():
                         # if not isinstance(item[key], list):
@@ -141,7 +141,7 @@ class ChannelPipeline:
                     # so we have channel_id
                     request = "UPDATE articles SET channel_id={} WHERE channel_url=\'{}\';".format(channel_id, channel_url)
                     # update articles from this launch, set chan_id for them
-
+                    # TODO проверка, что статей не станет слишком много (если было пять + аффтар дропнул еще одну)
                     cursor.execute(request)
                     self.conn.commit()
 
