@@ -18,11 +18,14 @@ class ArticleItem(scrapy.Item):
     date = scrapy.Field()
     header = scrapy.Field()
     url = scrapy.Field()
+    views = scrapy.Field()
+    reads = scrapy.Field()
     arb_link = scrapy.Field()
     arbitrage = scrapy.Field()
     form = scrapy.Field()
     streaming = scrapy.Field()
     zen_related = scrapy.Field()
+    using_direct = scrapy.Field()
 
 
 class ChannelItem(scrapy.Item):
