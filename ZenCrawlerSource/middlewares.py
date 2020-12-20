@@ -173,11 +173,28 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
 # class IPNoRetryDownloaderMiddleware: - deprecated
 class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retries due to redirect so...
     def __init__(self):  # added connection to db
-        self.db = "proxy_db"
+        self.db = "proxies"
         self.usr = "postgres"
         self.pswd = "postgres"
         self.hst = "127.0.0.1"
         self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+
+    def ban_proxy(self, request):
+        adr_port = request.meta['proxy'].split("/")[-1]
+        addr, port = adr_port.split(":")[0], adr_port.split(":")[1]
+        curs = self.conn().cursor
+        req = f"UPDATE proxies SET banned_by_yandex=True WHERE address='{addr}' AND port={int(port)};"
+        curs.execute(req)
+        curs.close()
+
+    def proxify(self):
+        req = "SELECT id,address,port FROM proxies WHERE banned_by_yandex = False AND (SELECT bad_count FROM details WHERE proxy_id = id) = 0 ORDER BY id DESCLIMIT 1;"
+        curs = self.conn.cursor()
+        curs.execute(req)
+        self.conn.commit()
+        return curs.fetchone()[3] + "://" + curs.fetchone()[1] + ":" + str(curs.fetchone()[2])
+        curs.close()
+
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -195,14 +212,14 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         spider.logger.warning(f"self.conn closed")
 
     def process_request(self, request, spider):
-        if request.dont_filter: # fixes infinite retrying
+        if request.dont_filter: # fixes infinite retrying TODO check if that's correct
             request.dont_filter = False
 
         spider.logger.warning("Processing request (see url below)")
         spider.logger.warning(request.url)
-        if request.meta['proxy'] == '' or not request.meta['proxy']:
-            proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
-            proxy_string = proxy.get_address()
+        if 'proxy' not in request.meta or request.meta['proxy'] == '':
+            # picking a proxy TODO vary parameters of picking
+            proxy_string = self.proxify()
             request.meta['proxy'] = proxy_string
             spider.logger.warning(f"Proxy is set to {proxy_string}")
         return None
@@ -217,19 +234,25 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         # 4xx errors handler
         if response.status == 200:
             return response
-        elif response.status in [407, 409, 500, 501, 502, 503, 508, 301, 302, 307, 303, 304]:
 
+        elif response.status in [407, 409, 500, 501, 502, 503, 508, 301, 302, 307, 303, 304]:
+        # could cause endless loop and eventual loss of information..... TODO 3xx support
             if 'proxy' in request.meta:  # checks that key exists
                 if request.meta['proxy'] != '':
-                    proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                    self.ban_proxy(request)
+                    # proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                # request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                request.meta['proxy'] = self.proxify()
+                request.dont_filter = True # TODO endless looping? SoBayed
                 return request
-            else:
-                request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+            else: # don't actually need that
+                # request.meta['proxy'] = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+                request.meta['proxy'] = self.proxify()
+                request.dont_filter = True
                 return request
 
         elif response.status == 404:
-            return response
+            return None # or shall we return response...
 
         else:  # то есть нужно по-хорошему тестить уже на дзенчике, вдруг умники с яндекса
             # отдадут вечный 3хх или 404) ну посмотрим, посмотрим
@@ -239,7 +262,9 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
     def process_exception(self, request, exception, spider):
         try:
             if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
-                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                # blacklisting a proxy
+                self.ban_proxy(request)
+                # proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 request.meta['proxy'] = ''  # proxy.get_address()
                 # spider.logger.warning(f"{self.conn.closed}") # returns 0 or 1
             # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
@@ -250,18 +275,20 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
         except KeyError:  # always getting triggered. TODO rework rotation logic around this
             # traceback.print_exc()
             request.meta['proxy'] = ''
-            spider.logger.warning(f"WOW! Look at that {exception} happened, but we're here due to KeyError")
+            spider.logger.warning("Forced proxy exception")
 
         except InterfaceError:
             spider.logger.warning("Could not connect to db, conn closed, re-establishing")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             if request.meta['proxy'] != '':
-                proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                self.ban_proxy(request)
+                # proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
                 request.meta['proxy'] = ''
 
         except AttributeError: # could lead to more complicated bugs, but it'll do just fine if works
             spider.logger.warning("finally, AttributeError")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+
         request.dont_filter = True # makes process_request work on handled request
         return request # такое чувство, что вот здесь хуйня фильтрует лишнего. типа когда снимаешь фильтры,
         # запросы норм идут
