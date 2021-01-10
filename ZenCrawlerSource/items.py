@@ -40,5 +40,13 @@ class ChannelItem(scrapy.Item):
     # is_streaming = scrapy.Field()
 
 
-
+class GalleryItem(scrapy.Item):
+    date = scrapy.Field()
+    header = scrapy.Field()
+    url = scrapy.Field()
+    views = scrapy.Field()
+    reads = scrapy.Field()
+    arb_link = scrapy.Field()
+    arbitrage = scrapy.Field()
+    zen_related = scrapy.Field()
 
