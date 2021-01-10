@@ -7,8 +7,63 @@ import json
 from tqdm import tqdm
 from psycopg2 import InterfaceError
 
-non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', 'vimeo', 'youtube', 'vk']
+non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', 'vimeo', 'youtube', 'vk', "yandex.ru/news", "yandex.ru/images"]
 
+
+class Galleries:
+    def __init__(self, date, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, zen_related=False):
+        self.date = datetime.datetime.now()
+        self.header = header
+        self.url = url
+        self.views = views
+        self.reads = reads
+        self.arb_link = arb_link
+        self.arbitrage = arbitrage
+        self.zen_related = zen_related
+        # self.using_direct = using_direct
+
+    def get_static_stats(self, response):
+        # TODO ADD TITLE RECOGNITION
+        my_data = response.css("script#all-data::text").get()
+        my_ind = my_data.index("window._data = ")
+        my_ind_fin = my_data.index("window._uatraits =")
+        # ending = my_data[:my_ind_fin].rfind(';')
+        # beginning = my_data[my_ind:].index("{")
+        # json_string = my_data[my_data[my_ind:].index("{")+my_ind:my_data[:my_ind_fin].rfind(';')]
+        my_json = json.loads(my_data[my_data[my_ind:].index("{")+my_ind:my_data[:my_ind_fin].rfind(';')])
+        # print(json.dumps(my_json, indent=4, sort_keys=True)) # - a tangible output
+        try:
+            datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["addTime"])/1000)
+        except KeyError:
+            datestamp = None
+        try:
+            mod_datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["content"]["modTime"])/1000)
+        except KeyError:
+            mod_datestamp = None
+
+        search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
+        link = ""
+        tmp = False
+        for i in search_scope['items']:
+            for j in i["rich_text"]["json"]:
+                if "attribs" in j.keys():
+                    if "href" in j["attribs"].keys():
+                        link = j["attribs"]["href"]
+                        for i in non_arbitrage:  # проверка на ссылочный мусор
+                            if (link).find(i) != -1:
+                                tmp = True
+                                link = ""
+                                break
+
+        if_link = None or link
+
+        if if_link and (not tmp):
+            self.arbitrage = True
+            self.arb_link = if_link
+            if self.arb_link.find("zen.yandex.ru") != -1:
+                self.zen_related = True
+        self.created_at = datestamp
+        self.modified_at = mod_datestamp
 
 class Articles:
 
@@ -50,9 +105,9 @@ class Articles:
             self.arbitrage = True
 
     def is_arbitrage(self, response): # checks straight-up links
-        if_p = response.css("p.article-render__block a.article-link::attr(href)").get() or "a"
-        if_blockquote = response.css("blockquote.article-render__block a.article-link::attr(href)").get() or "a"
-        if_header = response.css("h2.article-render__block a.article-link::attr(href)").get() or response.css("h3.article-render__block a.article-link::attr(href)").get() or "a"
+        if_p = response.css("p.article-render__block a.article-link::attr(href)").get() or ""
+        if_blockquote = response.css("blockquote.article-render__block a.article-link::attr(href)").get() or ""
+        if_header = response.css("h2.article-render__block a.article-link::attr(href)").get() or response.css("h3.article-render__block a.article-link::attr(href)").get() or ""
         tmp = False
 
         for i in non_arbitrage: # проверка на ссылочный мусор
@@ -132,6 +187,22 @@ class Channels:
         else:
             return False
 
+# class JSSpider(scrapy.Spider): # splash проще в 100500 раз... Но и он не нужен))
+#     name = "js_nightcrawler"
+#
+#     allowed_domains = ["zen.yandex.ru"]
+#
+#     def __init__(self, url=None, *args, **kwargs):
+#         super(JSSpider, self).__init__(*args, **kwargs)
+#         self.start_urls = [f'{url}']
+#
+#     def parse(self, response):
+#         pass
+#
+#     # firing it:
+#     # process = CrawlerProcess(settings = {})
+#     # process.crawl(JSSpider, url)
+#     # process.start()
 
 class ExampleSpider(scrapy.Spider):
     name = "nightcrawler"
@@ -210,7 +281,11 @@ class ExampleSpider(scrapy.Spider):
 
         # can move that line to top and make if statement, so we only get channels w/ articles to bd
         urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]
-        # CHANGE x in [:x] for different MAX amount of articles to be fetched
+        # специфично TODO уже специфично для статей
+
+        galls = response.css("div.card-wrapper__inner a.card-gallery-desktop-view__clickable::attr(href)").getall()[:5]
+
+        # CHANGE x in [:x] for different MAX amount of articles/galleries to be fetched
 
         self.logger.info(f"Itemizing {chan}")
         my_item = self.itemize_channel(chan)
@@ -221,26 +296,40 @@ class ExampleSpider(scrapy.Spider):
                 yield response.follow(url,
                                       callback=self.fetch_article
                                       )
-        # del chan
-
-        # yield from response.follow_all(urls,
-        #                                callback=self.fetch_article,
-        #                                cb_kwargs=dict(channel=chan, total_articles=len(urls))
-        #                                )
-        # article_urls = response.css("div.card-wrapper__inner a::attr(href)").getall()
-        # articles = []
-        #
-        # for i in range(0, 4, 1):
-        #     articles.append(self.fetch_article(response, article_urls[i])) # TODO протестить DONE
-        #
-        # chan.articles = articles
-        # chan.is_arbitrage(articles)
-        #
-        # yield ExampleSpider.pack_to_items(chan)
-        # del chan
+        for url in galls:
+            if url.find("zen.yandex.ru"):  # мало ли, вдруг мы зашли на сайтовый канал
+                yield response.follow(url,
+                                      callback=self.fetch_gallery
+                                      )
         # yield from response.follow_all(articles, callback=self.fetch_article)
 
-    # TODO статистика подгружается джаваскриптом... В отличии от канальной. В первой версии она не критична
+    # TODO статистика подгружается джаваскриптом... Собирается)
+
+    def fetch_gallery(self, response):
+        date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
+        title = "auto-filled"
+        pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
+        views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
+        gall = Galleries(date, title, response.url)
+        try:
+            yield response.follow(views_req_url, callback=self.get_gallery_stats,
+                                  cb_kwargs=dict(gallery=gall))
+        except Exception:
+            gall_item = self.itemize_gallery(gall)
+            yield gall_item
+
+    def get_gallery_stats(self, response, gallery):
+        resp_string = "{}".format(response.css("body p").get())
+        my_dict = json.loads(resp_string)
+        reads = -1
+        views = -1
+        if my_dict:
+            reads = my_dict["viewsTillEnd"]
+            views = my_dict["views"]
+        gallery.reads = reads
+        gallery.views = views
+        art_item = self.itemize_gallery(gallery)
+        yield art_item
 
     def fetch_article(self, response):
         title = response.css("div#article__page-root h1.article__title::text").get()
