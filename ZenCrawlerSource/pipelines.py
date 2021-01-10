@@ -3,7 +3,7 @@ import datetime
 from psycopg2 import InterfaceError
 from psycopg2.errors import SyntaxError
 from scrapy import signals
-from ZenCrawlerSource.items import ChannelItem, ArticleItem
+from ZenCrawlerSource.items import ChannelItem, ArticleItem, GalleryItem
 
 
 # Define your item pipelines here
@@ -107,7 +107,8 @@ class ChannelPipeline:
                 self.conn.commit()
 
                 spider.logger.warning("CHANNEL ITEM PROCESSED")
-
+            elif isinstance(item, GalleryItem):
+                pass
             elif isinstance(item, ArticleItem):
                 item["url"] = item["url"].split("?")[0]
                 if item["arb_link"]:
@@ -176,7 +177,6 @@ class ChannelPipeline:
                 self.conn.commit()
             cursor.close()
             spider.logger.warning("ARTICLE ITEM PROCESSED")
-
         except InterfaceError:
             spider.logger.warning("ITEM DB CONN FAILED, RE-ESTABLISHING")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
