@@ -108,7 +108,74 @@ class ChannelPipeline:
 
                 spider.logger.warning("CHANNEL ITEM PROCESSED")
             elif isinstance(item, GalleryItem):
-                pass
+                item["url"] = item["url"].split("?")[0]
+                if item["arb_link"]:
+                    item["arb_link"] = item["arb_link"].split("?")[0][:2000].replace("'", "")
+                test = db_ops.read_from_db(self.conn, "galleries", "url", where="url=\'{}\'".format(item["url"]))
+                spider.logger.warning("GALLERY ITEM IS IN PIPELINE, PROCESSING...")
+                channel_url_array = item["url"].split("/")
+                if 'id' in channel_url_array:
+                    channel_url = 'https://zen.yandex.ru/id/' + channel_url_array[-2]
+                else:
+                    channel_url = 'https://zen.yandex.ru/' + channel_url_array[-2]
+
+                channel_id = db_ops.read_from_db(self.conn, "channels", "channel_id",
+                                                 where="url=\'{}\'".format(channel_url))
+                if channel_id:
+                    channel_id = channel_id[0][0]
+                cursor = self.conn.cursor()
+
+                if channel_id and test:  # что здесь вообще происходит?)
+                    request = "UPDATE galleries SET channel_url=\'{}\',".format(channel_url)
+                    for key in item.keys():
+                        # if not isinstance(item[key], list):
+                        if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
+                            request += " {}=\'{}\',".format(key, item[key])
+                        else:
+                            request += " {}={},".format(key, item[key])
+                    request = request[:-1]
+                    request += " WHERE channel_id={};".format(channel_id)
+
+                elif channel_id and not test:  # didn't write previously, but at this launch crawler got channel written to db
+                    # so we have channel_id
+                    request = "UPDATE galleries SET channel_id={} WHERE channel_url=\'{}\';".format(channel_id,
+                                                                                                   channel_url)
+                    # update articles from this launch, set chan_id for them
+                    # TODO проверка, что статей не станет слишком много (если было пять + аффтар дропнул еще одну)
+                    cursor.execute(request)
+                    self.conn.commit()
+
+                    valz = "{}, \'{}\', ".format(channel_id, channel_url)
+                    keyz = "channel_id, channel_url, "
+                    for key in item.keys():
+                        # if not isinstance(item[key], list):
+                        keyz += "{}, ".format(key)
+                        if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
+                            valz += "\'{}\', ".format(item[key])
+                        else:
+                            valz += "{}, ".format(item[key])
+                    keyz = keyz[:-2]
+                    valz = valz[:-2]
+                    request = "INSERT INTO galleries ({}) VALUES ({});".format(keyz, valz)
+
+                else:  # know only url
+                    valz = "\'{}\', ".format(channel_url)
+                    keyz = "channel_url, "
+                    for key in item.keys():
+                        # if not isinstance(item[key], list):
+                        keyz += "{}, ".format(key)
+                        if isinstance(item[key], str) or isinstance(item[key], datetime.datetime):
+                            valz += "\'{}\', ".format(item[key])
+                        else:
+                            valz += "{}, ".format(item[key])
+                    keyz = keyz[:-2]
+                    valz = valz[:-2]
+                    request = "INSERT INTO galleries ({}) VALUES ({});".format(keyz, valz)
+                spider.logger.warning("GAL | SQL REQUEST IS: " + str(cursor.mogrify(request)))
+                cursor.execute(request)
+                self.conn.commit()
+                spider.logger.warning("GALLERY ITEM PROCESSED")
+
             elif isinstance(item, ArticleItem):
                 item["url"] = item["url"].split("?")[0]
                 if item["arb_link"]:
