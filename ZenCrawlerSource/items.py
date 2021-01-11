@@ -15,7 +15,9 @@ class ZencrawlersourceItem(scrapy.Item):
 
 # TODO перевести на created_at/modified_at, думаю так пополезнее будет
 class ArticleItem(scrapy.Item):
-    date = scrapy.Field()
+    created_at = scrapy.Field()
+    modified_at = scrapy.Field()
+    # date = scrapy.Field() # deprecated
     header = scrapy.Field()
     url = scrapy.Field()
     views = scrapy.Field()
