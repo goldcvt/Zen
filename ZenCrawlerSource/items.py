@@ -39,6 +39,11 @@ class ChannelItem(scrapy.Item):
     last_checked = scrapy.Field()
     # is_streaming = scrapy.Field()
 
+class GalleryItem(scrapy.Item):
+    date = scrapy.FIeld()
+    header = scrapy.Field()
+    url = scrapy.Field()
+
 
 class GalleryItem(scrapy.Item):
     date = scrapy.Field()
