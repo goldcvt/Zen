@@ -13,7 +13,7 @@ class ZencrawlersourceItem(scrapy.Item):
 
 # item version of article and channel
 
-
+# TODO перевести на created_at/modified_at, думаю так пополезнее будет
 class ArticleItem(scrapy.Item):
     date = scrapy.Field()
     header = scrapy.Field()
@@ -40,13 +40,8 @@ class ChannelItem(scrapy.Item):
     # is_streaming = scrapy.Field()
 
 class GalleryItem(scrapy.Item):
-    date = scrapy.FIeld()
-    header = scrapy.Field()
-    url = scrapy.Field()
-
-
-class GalleryItem(scrapy.Item):
-    date = scrapy.Field()
+    created_at = scrapy.Field()
+    modified_at = scrapy.Field()
     header = scrapy.Field()
     url = scrapy.Field()
     views = scrapy.Field()

@@ -2,7 +2,7 @@ import scrapy
 from crawler_toolz import db_ops
 import datetime
 import re
-from ZenCrawlerSource.items import ChannelItem, ArticleItem, ZencrawlersourceItem
+from ZenCrawlerSource.items import ChannelItem, ArticleItem, GalleryItem, ZencrawlersourceItem
 import json
 from tqdm import tqdm
 from psycopg2 import InterfaceError
@@ -11,8 +11,9 @@ non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', '
 
 
 class Galleries:
-    def __init__(self, date, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, zen_related=False):
-        self.date = datetime.datetime.now()
+    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, zen_related=False):
+        self.created_at = created_at
+        self.modified_at = modified_at
         self.header = header
         self.url = url
         self.views = views
@@ -23,7 +24,6 @@ class Galleries:
         # self.using_direct = using_direct
 
     def get_static_stats(self, response):
-        # TODO ADD TITLE RECOGNITION
         my_data = response.css("script#all-data::text").get()
         my_ind = my_data.index("window._data = ")
         my_ind_fin = my_data.index("window._uatraits =")
@@ -33,6 +33,10 @@ class Galleries:
         my_json = json.loads(my_data[my_data[my_ind:].index("{")+my_ind:my_data[:my_ind_fin].rfind(';')])
         # print(json.dumps(my_json, indent=4, sort_keys=True)) # - a tangible output
         try:
+            self.header = my_json["publication"]["content"]["preview"]["title"]
+        except:
+            self.header = "error"
+        try:
             datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["addTime"])/1000)
         except KeyError:
             datestamp = None
@@ -40,7 +44,6 @@ class Galleries:
             mod_datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["content"]["modTime"])/1000)
         except KeyError:
             mod_datestamp = None
-
         search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
         link = ""
         tmp = False
@@ -303,7 +306,6 @@ class ExampleSpider(scrapy.Spider):
                                       )
         # yield from response.follow_all(articles, callback=self.fetch_article)
 
-    # TODO статистика подгружается джаваскриптом... Собирается)
 
     def fetch_gallery(self, response):
         date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
@@ -311,6 +313,7 @@ class ExampleSpider(scrapy.Spider):
         pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
         views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
         gall = Galleries(date, title, response.url)
+        gall.get_static_stats(response)
         try:
             yield response.follow(views_req_url, callback=self.get_gallery_stats,
                                   cb_kwargs=dict(gallery=gall))
@@ -391,6 +394,20 @@ class ExampleSpider(scrapy.Spider):
             zen_related=article.zen_related
         )
         return item
+
+    @staticmethod
+    def itemize_gallery(gallery):
+        item = GalleryItem(
+                created_at=gallery.created_at,
+                modified_at=gallery.modified_at,
+                header=gallery.header,
+                url=gallery.url,
+                views=gallery.views,
+                reads=gallery.reads,
+                arb_link=gallery.arb_link,
+                arbitrage=gallery.arbitrage,
+                zen_related=gallery.zen_related
+        )
 
     # @staticmethod
     # def get_reads(string):
