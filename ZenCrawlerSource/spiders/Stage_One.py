@@ -5,7 +5,6 @@ import re
 from ZenCrawlerSource.items import ChannelItem, ArticleItem, GalleryItem, ZencrawlersourceItem
 import json
 from tqdm import tqdm
-from psycopg2 import InterfaceError
 
 non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', 'vimeo', 'youtube', 'vk', "yandex.ru/news", "yandex.ru/images"]
 
@@ -36,6 +35,7 @@ class Galleries:
             self.header = my_json["publication"]["content"]["preview"]["title"]
         except:
             self.header = "error"
+        self.header = self.header.replace("'", "")
         try:
             datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["addTime"])/1000)
         except KeyError:
@@ -62,7 +62,7 @@ class Galleries:
 
         if if_link and (not tmp):
             self.arbitrage = True
-            self.arb_link = if_link
+            self.arb_link = if_link.replace("'", "")
             if self.arb_link.find("zen.yandex.ru") != -1:
                 self.zen_related = True
         self.created_at = datestamp
@@ -70,8 +70,9 @@ class Galleries:
 
 class Articles:
 
-    def __init__(self, date, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False, using_direct=False):
-        self.publication_date = date
+    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False, using_direct=False):
+        self.created_at = created_at
+        self.modified_at = modified_at
         self.header = header
         self.url = url
         self.views = views
@@ -120,7 +121,8 @@ class Articles:
 
         if if_p or if_blockquote or if_header and (not tmp):
             self.arbitrage = True
-            self.arb_link = if_p or if_blockquote or if_header# питонно пиздец)
+            # питонно пиздец)
+            self.arb_link = if_p.replace("'", "") or if_blockquote.replace("'", "") or if_header.replace("'", "")
             if self.arb_link.find("zen.yandex.ru") != -1:
                 self.zen_related = True
         self.using_form(response)
@@ -128,12 +130,12 @@ class Articles:
 
 class Channels:
 
-    def __init__(self, subs, audience, url, links=[], articles=[], arbitrage=False, form=False, is_crawled=False, streaming=False):
+    def __init__(self, subs, audience, url, links=None, articles=None, arbitrage=False, form=False, is_crawled=False, streaming=False):
         self.subs = int(subs)
         self.audience = int(audience)
         self.url = url
-        self.links = links
-        self.articles = articles
+        self.links = links or []
+        self.articles = articles or []
         self.arbitrage = arbitrage
         self.form = form
         self.is_crawled = is_crawled
@@ -213,20 +215,14 @@ class ExampleSpider(scrapy.Spider):
     allowed_domains = ["zen.yandex.ru", "zen.yandex.com"]
     start_urls = ["https://zen.yandex.ru/media/zen/channels"]
 
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-    #     self.zen_conn = db_ops.connect_to_db("zen_copy", "postgres", "postgres", "127.0.0.1")
-    #     self.logger.info("Established spider-based connection to zen_copy")
-
     def parse(self, response):
-
         for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
-            if a != "media/zen/channels": # DONE теперь итерация правильная - TODO
+            if a != "media/zen/channels": # DONE теперь итерация правильная
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=True)
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()
-        if channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой - TODO
+        if channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой
             next_page = response.css(
                 "div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()
             if len(next_page) > 1:
@@ -245,11 +241,11 @@ class ExampleSpider(scrapy.Spider):
                 for chan in chans:
                     yield response.follow(chan, callback=self.parse_channel)
 
-    def parse_channel(self, response): # DONE перевели на классы - TODO
+    def parse_channel(self, response): # DONE перевели на классы
         self.logger.info("Channel name: " + response.css("div.zen-app div.channel-header-view-desktop__info-block h1 span::text").get())
         default_stats = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__value::text").getall()
         stat_kword = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__name::text").get()
-        # DONE implemented PC UA TODO
+        # DONE implemented PC UA
         if len(default_stats) == 2:
             audience = int("".join(("".join(default_stats[0].split("<"))).split(" ")))
             subs = int("".join(("".join(default_stats[1].split("<"))).split(" ")))
@@ -267,24 +263,9 @@ class ExampleSpider(scrapy.Spider):
         chan = Channels(subs, audience, response.url)
         chan.get_contacts(response)
 
-        # try:
-        #     chan.if_crawled(self.zen_conn)
-        #     self.logger.info(f"Checking whether {chan.url} was parsed")
-        #     if chan.is_crawled:
-        #         self.logger.info(f"{chan.url} have been parsed before")
-        #     else:
-        #         self.logger.info(f"{chan.url} haven't been parsed before")
-        # except InterfaceError:
-        #     self.zen_conn = db_ops.connect_to_db("zen_copy", "obama", "obama", "127.0.0.1")
-        #     chan.if_crawled(self.zen_conn)
-        #     if chan.is_crawled:
-        #         self.logger.info(f"{chan.url} have been parsed before")
-        #     else:
-        #         self.logger.info(f"{chan.url} haven't been parsed before")
-
         # can move that line to top and make if statement, so we only get channels w/ articles to bd
         urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]
-        # специфично TODO уже специфично для статей
+        # уже специфично для статей
 
         galls = response.css("div.card-wrapper__inner a.card-gallery-desktop-view__clickable::attr(href)").getall()[:5]
 
@@ -294,67 +275,64 @@ class ExampleSpider(scrapy.Spider):
         my_item = self.itemize_channel(chan)
         yield my_item
 
-        for url in urls:
-            if url.find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
-                yield response.follow(url,
-                                      callback=self.fetch_article
+        if urls:
+            if urls[0].find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
+                yield response.follow(urls[0],
+                                      callback=self.fetch_article,
+                                      cb_kwargs=dict(other_pubs=urls[1:])
                                       )
-        for url in galls:
-            if url.find("zen.yandex.ru"):  # мало ли, вдруг мы зашли на сайтовый канал
-                yield response.follow(url,
-                                      callback=self.fetch_gallery
-                                      )
-        # yield from response.follow_all(articles, callback=self.fetch_article)
+        if galls:
+            yield response.follow(galls[0],
+                                  callback=self.fetch_gallery,
+                                  cb_kwargs=dict(other_pubs=galls[1:])
+                                  )
 
-
-    def fetch_gallery(self, response):
-        date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
-        title = "auto-filled"
+    def fetch_gallery(self, response, other_pubs=None):
+        base_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
+        title = ""
         pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
         views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
-        gall = Galleries(date, title, response.url)
+        gall = Galleries(base_date, base_date, title, response.url)
         gall.get_static_stats(response)
         try:
-            yield response.follow(views_req_url, callback=self.get_gallery_stats,
-                                  cb_kwargs=dict(gallery=gall))
+            yield response.follow(views_req_url, callback=self.get_reads,
+                                  cb_kwargs=dict(publication=gall))
         except Exception:
             gall_item = self.itemize_gallery(gall)
             yield gall_item
 
-    def get_gallery_stats(self, response, gallery):
-        resp_string = "{}".format(response.css("body p").get())
-        my_dict = json.loads(resp_string)
-        reads = -1
-        views = -1
-        if my_dict:
-            reads = my_dict["viewsTillEnd"]
-            views = my_dict["views"]
-        gallery.reads = reads
-        gallery.views = views
-        art_item = self.itemize_gallery(gallery)
-        yield art_item
+        # TODO check here
+        if other_pubs and gall.created_at > (datetime.datetime.now() - datetime.timedelta(days=30)):
+            yield response.follow_all(other_pubs,
+                                     callback=self.fetch_gallery
+                                     )
 
-    def fetch_article(self, response):
+    def fetch_article(self, response, other_pubs=None):
         title = response.css("div#article__page-root h1.article__title::text").get()
         if title:
             title = title.replace("'", "")
-        d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
-        date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
-        if d_str:
-            date = ExampleSpider.get_date(d_str)
-        article = Articles(date, title, response.url)
-        article.is_arbitrage(response)
+        # d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
+        base_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
 
+        article = Articles(base_date, base_date, title, response.url)
+        article.is_arbitrage(response)
+        ExampleSpider.get_date(article, response)
         pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
         views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
 
         try:
-            yield response.follow(views_req_url, callback=self.get_reads, cb_kwargs=dict(article=article, article_url=response.url))
+            yield response.follow(views_req_url, callback=self.get_reads, cb_kwargs=dict(publication=article))
         except Exception:
             art_item = self.itemize_article(article)
             yield art_item
 
-    def get_reads(self, response, article, article_url):
+        #TODO pay attention
+        if other_pubs and article.created_at > (datetime.datetime.now() - datetime.timedelta(days=30)):
+            yield response.follow_all(other_pubs,
+                                     callback=self.fetch_article
+                                     )
+
+    def get_reads(self, response, publication):
         resp_string = "{}".format(response.css("body p").get())
         my_dict = json.loads(resp_string)
         reads = -1
@@ -362,10 +340,13 @@ class ExampleSpider(scrapy.Spider):
         if my_dict:
             reads = my_dict["viewsTillEnd"]
             views = my_dict["views"]
-        article.reads = reads
-        article.views = views
-        art_item = self.itemize_article(article)
-        yield art_item
+        publication.reads = reads
+        publication.views = views
+        if isinstance(publication, Articles):
+            item = self.itemize_article(publication)
+        else:
+            item = self.itemize_gallery(publication)
+        yield item
 
 
     @staticmethod
@@ -382,7 +363,8 @@ class ExampleSpider(scrapy.Spider):
     @staticmethod
     def itemize_article(article):
         item = ArticleItem(
-            date=article.publication_date,
+            created_at=article.created_at,
+            modified_at=article.modified_at,
             header=article.header,
             url=article.url,
             views=article.views,
@@ -408,14 +390,31 @@ class ExampleSpider(scrapy.Spider):
                 arbitrage=gallery.arbitrage,
                 zen_related=gallery.zen_related
         )
+        return item
 
-    # @staticmethod
-    # def get_reads(string):
-    #     pass
-    # TODO нетрудно заметить, что нам нужно забирать число, даже если есть знак <
 
     @staticmethod
-    def get_date(datestring):
+    def get_date(publication, response):
+        my_data = response.css("script#all-data::text").get()
+        my_ind = my_data.index("window._data = ")
+        my_ind_fin = my_data.index("window._uatraits =")
+        my_json = json.loads(my_data[my_data[my_ind:].index("{") + my_ind:my_data[:my_ind_fin].rfind(';')])
+
+        try:
+            datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["addTime"]) / 1000)
+            publication.created_at = datestamp
+        except KeyError:
+            pass
+        try:
+            mod_datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["content"]["modTime"]) / 1000)
+            publication.modified_at = mod_datestamp
+        except KeyError:
+            pass
+
+
+
+    @staticmethod
+    def get_date_old(datestring):
         elements = datestring.lower().split("\xa0")
         final_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
         # datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1 and
@@ -460,9 +459,6 @@ class ExampleSpider(scrapy.Spider):
     #   self.proxy_conn.close()
 
     # return True, если всё нормально. Иначе false
-
-# TODO если есть плашка "партнерская статья" - не арбитражная)
-#  Впрочем, это необязательно - мы несколько статей смотрим
 
 
 class SecondLevelSpider(scrapy.Spider):
