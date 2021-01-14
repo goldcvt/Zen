@@ -28,7 +28,7 @@ CONCURRENT_REQUESTS = 200
 #DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
-CONCURRENT_REQUESTS_PER_IP = 50
+CONCURRENT_REQUESTS_PER_IP = 5
 
 # Disable cookies (enabled by default)
 COOKIES_ENABLED = False  # just in case, y'know
@@ -58,7 +58,7 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
-    'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
+    # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.OnlyExceptionsProxified': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
@@ -82,27 +82,27 @@ DUPEFILTER_DEBUG = False
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
-    # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150,
-    'ZenCrawlerSource.pipelines.SpeedTestPipeline': 150
+    'ZenCrawlerSource.pipelines.ChannelPipeline': 150,
+    # 'ZenCrawlerSource.pipelines.SpeedTestPipeline': 150
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-AUTOTHROTTLE_ENABLED = False
+AUTOTHROTTLE_ENABLED = True
 # The initial download delay
 AUTOTHROTTLE_START_DELAY = 0.5
 # The maximum download delay to be set in case of high latencies
-AUTOTHROTTLE_MAX_DELAY = 1
+AUTOTHROTTLE_MAX_DELAY = 5
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-AUTOTHROTTLE_TARGET_CONCURRENCY = 50
+AUTOTHROTTLE_TARGET_CONCURRENCY = 5
 # Enable showing throttling stats for every response received:
-AUTOTHROTTLE_DEBUG = False
+AUTOTHROTTLE_DEBUG = True
 
 HTTPERROR_ALLOWED_CODES = []  # actually, spider doesn't get non-200 responses to parse, downloader still works tho
 
 # Memory Debugger Ext SETTINGS
-MEMDEBUG_ENABLED = True
+MEMDEBUG_ENABLED = False
 
 RETRY_ENABLED = False
 
