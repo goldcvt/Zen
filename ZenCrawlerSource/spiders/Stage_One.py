@@ -37,11 +37,11 @@ class Galleries:
             self.header = "error"
         self.header = self.header.replace("'", "")
         try:
-            datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["addTime"])/1000)
+            datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"])/1000))
         except KeyError:
             datestamp = None
         try:
-            mod_datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["content"]["modTime"])/1000)
+            mod_datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"])/1000))
         except KeyError:
             mod_datestamp = None
         search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
@@ -288,7 +288,7 @@ class ExampleSpider(scrapy.Spider):
                                   )
 
     def fetch_gallery(self, response, other_pubs=None):
-        base_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
+        base_date = datetime.date(1900, 12, 12)
         title = ""
         pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
         views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
@@ -312,7 +312,7 @@ class ExampleSpider(scrapy.Spider):
         if title:
             title = title.replace("'", "")
         # d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
-        base_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
+        base_date = datetime.date(1900, 12, 12)
 
         article = Articles(base_date, base_date, title, response.url)
         article.is_arbitrage(response)
@@ -401,12 +401,12 @@ class ExampleSpider(scrapy.Spider):
         my_json = json.loads(my_data[my_data[my_ind:].index("{") + my_ind:my_data[:my_ind_fin].rfind(';')])
 
         try:
-            datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["addTime"]) / 1000)
+            datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
             publication.created_at = datestamp
         except KeyError:
             pass
         try:
-            mod_datestamp = datetime.datetime.fromtimestamp(int(my_json["publication"]["content"]["modTime"]) / 1000)
+            mod_datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"]) / 1000))
             publication.modified_at = mod_datestamp
         except KeyError:
             pass
@@ -416,7 +416,7 @@ class ExampleSpider(scrapy.Spider):
     @staticmethod
     def get_date_old(datestring):
         elements = datestring.lower().split("\xa0")
-        final_date = datetime.datetime(1900, 12, 12, 12, 12, 12, 0)
+        final_date = datetime.datetime(1900, 12, 12)
         # datestring.lower().find('ago') == -1 and datestring.lower().find('day') == -1 and
         if datestring.lower().find('дня') == -1 and datestring.lower().find('чера') ==-1 and datestring.lower().find('назад') == -1:
             # yesterday, today, 3 days ago - всё тут)
