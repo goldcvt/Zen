@@ -48,12 +48,12 @@ SPIDER_MIDDLEWARES = {
     # 'ZenCrawlerSource.middlewares.ZencrawlersourceSpiderMiddleware': 543,
     'scrapy.spidermiddlewares.httperror.HttpErrorMiddleware': 100
 }
-
+REDIRECT_MAX_TIMES = 5
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
-    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': None,
+    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 400,
     'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': None,
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
@@ -65,8 +65,8 @@ DOWNLOADER_MIDDLEWARES = {
 }
 
 LOG_FILE = "logs.txt"
-RANDOM_UA_PER_PROXY = True
-RANDOM_UA_TYPE = 'desktop.random'
+RANDOM_UA_PER_PROXY = False
+RANDOM_UA_TYPE = 'desktop.chrome'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
