@@ -23,7 +23,7 @@ class Galleries:
         # self.using_direct = using_direct
 
     def get_static_stats(self, response):
-        my_data = response.css("script#all-data::text").get().encode('utf-8').strip()
+        my_data = response.css("script#all-data::text").get().encode('utf-8').strip().decode()
         my_ind = my_data.index("window._data = ")
         my_ind_fin = my_data.index("window._uatraits =")
         # ending = my_data[:my_ind_fin].rfind(';')
@@ -310,7 +310,7 @@ class ExampleSpider(scrapy.Spider):
     def fetch_article(self, response, other_pubs=None):
         title = response.css("div#article__page-root h1.article__title::text").get().encode('utf-8').strip()
         if title:
-            title = title.replace("'", "")
+            title = title.decode().replace("'", "")
         # d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
         base_date = datetime.date(1900, 12, 12)
 
