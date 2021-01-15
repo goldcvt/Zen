@@ -53,7 +53,7 @@ REDIRECT_MAX_TIMES = 5
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
-    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 400,
+    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 420,
     'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': None,
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
