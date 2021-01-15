@@ -20,7 +20,7 @@ NEWSPIDER_MODULE = 'ZenCrawlerSource.spiders'
 ROBOTSTXT_OBEY = False
 
 #Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 200
+CONCURRENT_REQUESTS = 5
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -64,7 +64,7 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
 }
 
-# LOG_FILE = "logs.txt"
+LOG_FILE = "logs.txt"
 RANDOM_UA_PER_PROXY = True
 RANDOM_UA_TYPE = 'desktop.random'
 
