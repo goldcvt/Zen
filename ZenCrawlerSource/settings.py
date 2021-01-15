@@ -66,7 +66,7 @@ DOWNLOADER_MIDDLEWARES = {
 
 LOG_FILE = "logs.txt"
 RANDOM_UA_PER_PROXY = False
-RANDOM_UA_TYPE = 'desktop.chrome'
+RANDOM_UA_TYPE = 'desktop.random'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html

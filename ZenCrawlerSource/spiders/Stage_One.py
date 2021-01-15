@@ -333,13 +333,18 @@ class ExampleSpider(scrapy.Spider):
                                      )
 
     def get_reads(self, response, publication):
-        resp_string = "{}".format(response.css("body p").get())
-        my_dict = json.loads(resp_string)
         reads = -1
         views = -1
-        if my_dict:
-            reads = my_dict["viewsTillEnd"]
-            views = my_dict["views"]
+        resp_string = response.text
+        try:
+            my_dict = json.loads(resp_string)
+            if my_dict:
+                reads = my_dict["viewsTillEnd"]
+                views = my_dict["views"]
+        except json.decoder.JSONDecodeError:
+            self.logger.warning("Error in getting reads due to json.decoder.JSONDecodeError")
+        except NameError:
+            self.logger.warning("Error in getting reads due to NameError")
         publication.reads = reads
         publication.views = views
         if isinstance(publication, Articles):
