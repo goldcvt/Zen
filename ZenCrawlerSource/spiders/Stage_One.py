@@ -400,11 +400,16 @@ class ExampleSpider(scrapy.Spider):
 
     @staticmethod
     def get_date(publication, response):
-        my_data = response.css("script#all-data::text").get()
-        my_ind = my_data.index("window._data = ")
-        my_ind_fin = my_data.index("window._uatraits =")
-        my_json = json.loads(my_data[my_data[my_ind:].index("{") + my_ind:my_data[:my_ind_fin].rfind(';')])
-
+        try:
+            my_data = response.css("script#all-data::text").get().encode('utf-8').strip().decode()
+            my_ind = my_data.index("window._data = ")
+            my_ind_fin = my_data.index("window._uatraits =")
+            my_json = json.loads(my_data[my_data[my_ind:].index("{") + my_ind:my_data[:my_ind_fin].rfind(';')])
+        except Exception:
+            d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
+            publication.created_at = ExampleSpider.get_date_old(d_str)
+            publication.modified_at = ExampleSpider.get_date_old(d_str)
+            del d_str
         try:
             datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
             publication.created_at = datestamp
