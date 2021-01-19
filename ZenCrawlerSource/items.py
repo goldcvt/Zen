@@ -29,6 +29,8 @@ class ArticleItem(scrapy.Item):
     zen_related = scrapy.Field()
     using_direct = scrapy.Field()
     has_bad_text = scrapy.Field()
+    native_ads = scrapy.Field()
+    dark_post = scrapy.Field()
 
 
 class ChannelItem(scrapy.Item):
@@ -42,6 +44,7 @@ class ChannelItem(scrapy.Item):
     last_checked = scrapy.Field()
     # is_streaming = scrapy.Field()
 
+
 class GalleryItem(scrapy.Item):
     created_at = scrapy.Field()
     modified_at = scrapy.Field()
@@ -54,4 +57,6 @@ class GalleryItem(scrapy.Item):
     zen_related = scrapy.Field()
     using_direct = scrapy.Field()
     has_bad_text = scrapy.Field()
+    native_ads = scrapy.Field()
+    dark_post = scrapy.Field()
 

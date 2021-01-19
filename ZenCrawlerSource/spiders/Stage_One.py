@@ -10,7 +10,8 @@ non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', '
 
 
 class Galleries:
-    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, zen_related=False, has_bad_text=False, had_bad_image=False):
+    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False,
+                 zen_related=False, has_bad_text=False, had_bad_image=False, dark_post=False, native_ads=False):
         self.created_at = created_at
         self.modified_at = modified_at
         self.header = header
@@ -22,6 +23,9 @@ class Galleries:
         self.zen_related = zen_related
         self.has_bad_text = has_bad_text
         self.had_bad_image = had_bad_image
+        self.dark_post = dark_post
+        self.native_ads = native_ads
+        # TODO darkPost, hasNativeAds support
         # self.using_direct = using_direct
 
     def get_static_stats(self, response):
@@ -47,6 +51,14 @@ class Galleries:
             mod_datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"])/1000))
         except KeyError:
             mod_datestamp = None
+        try:
+            self.native_ads = my_json["publication"]["hasNativeAds"]
+        except KeyError:
+            pass
+        try:
+            self.dark_post = my_json["publication"]["darkPost"]
+        except KeyError:
+            pass
         search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
         link = ""
         tmp = False
@@ -80,7 +92,9 @@ class Galleries:
 
 
 class Articles:
-    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False, using_direct=False, has_bad_text=False, had_bad_image=False):
+    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False,
+                 streaming=False, form=False, zen_related=False, using_direct=False, has_bad_text=False,
+                 had_bad_image=False, native_ads=False, dark_post=False):
         self.created_at = created_at
         self.modified_at = modified_at
         self.header = header
@@ -95,6 +109,8 @@ class Articles:
         self.using_direct = using_direct
         self.has_bad_text = has_bad_text
         self.had_bad_image = had_bad_image
+        self.native_ads = native_ads
+        self.dark_post = dark_post
 
     def __str__(self):
         return f'{str(vars(self))}'
@@ -392,27 +408,30 @@ class ExampleSpider(scrapy.Spider):
             streaming=article.streaming,
             zen_related=article.zen_related,
             has_bad_text=article.has_bad_text,
-            had_bad_image=article.had_bad_image
+            had_bad_image=article.had_bad_image,
+            native_ads=article.native_ads,
+            dark_post=article.native_ads
         )
         return item
 
     @staticmethod
     def itemize_gallery(gallery):
         item = GalleryItem(
-                created_at=gallery.created_at,
-                modified_at=gallery.modified_at,
-                header=gallery.header,
-                url=gallery.url,
-                views=gallery.views,
-                reads=gallery.reads,
-                arb_link=gallery.arb_link,
-                arbitrage=gallery.arbitrage,
-                zen_related=gallery.zen_related,
-                has_bad_text=gallery.has_bad_text,
-                had_bad_image=gallery.had_bad_image
+            created_at=gallery.created_at,
+            modified_at=gallery.modified_at,
+            header=gallery.header,
+            url=gallery.url,
+            views=gallery.views,
+            reads=gallery.reads,
+            arb_link=gallery.arb_link,
+            arbitrage=gallery.arbitrage,
+            zen_related=gallery.zen_related,
+            has_bad_text=gallery.has_bad_text,
+            had_bad_image=gallery.had_bad_image,
+            native_ads=gallery.native_ads,
+            dark_post=gallery.native_ads
         )
         return item
-
 
     @staticmethod
     def get_date(publication, response):
@@ -437,6 +456,14 @@ class ExampleSpider(scrapy.Spider):
             del d_str
 
         else:
+            try:
+                publication.native_ads = my_json["publication"]["hasNativeAds"]
+            except KeyError:
+                pass
+            try:
+                publication.dark_post = my_json["publication"]["darkPost"]
+            except KeyError:
+                pass
             search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
             for i in search_scope['items']:
                 try:
