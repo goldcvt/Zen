@@ -331,7 +331,7 @@ class ExampleSpider(scrapy.Spider):
 
         # TODO check here
         if other_pubs and gall.created_at > (datetime.date.today() - datetime.timedelta(days=10)):
-            yield response.follow_all(other_pubs,
+            yield from response.follow_all(other_pubs,
                                      callback=self.fetch_gallery
                                      )
 
@@ -356,7 +356,7 @@ class ExampleSpider(scrapy.Spider):
 
         #TODO pay attention
         if other_pubs and article.created_at > (datetime.date.today() - datetime.timedelta(days=10)):
-            yield response.follow_all(other_pubs,
+            yield from response.follow_all(other_pubs,
                                      callback=self.fetch_article
                                      )
 
