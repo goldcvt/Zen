@@ -245,7 +245,7 @@ class ExampleSpider(scrapy.Spider):
 
     def parse(self, response):
         for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
-            if a != "media/zen/channels": # DONE теперь итерация правильная
+            if "firstChars" in a:  # можно впрочем итерироваться и не по буквам) тогда соотв. наоборот not
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=True)
 
     def parse_by_letter(self, response):
