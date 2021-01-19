@@ -28,6 +28,7 @@ class ArticleItem(scrapy.Item):
     streaming = scrapy.Field()
     zen_related = scrapy.Field()
     using_direct = scrapy.Field()
+    has_bad_text = scrapy.Field()
 
 
 class ChannelItem(scrapy.Item):
@@ -51,4 +52,6 @@ class GalleryItem(scrapy.Item):
     arb_link = scrapy.Field()
     arbitrage = scrapy.Field()
     zen_related = scrapy.Field()
+    using_direct = scrapy.Field()
+    has_bad_text = scrapy.Field()
 

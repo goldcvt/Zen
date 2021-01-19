@@ -10,7 +10,7 @@ non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', '
 
 
 class Galleries:
-    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, zen_related=False):
+    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, zen_related=False, has_bad_text=False, had_bad_image=False):
         self.created_at = created_at
         self.modified_at = modified_at
         self.header = header
@@ -20,15 +20,18 @@ class Galleries:
         self.arb_link = arb_link
         self.arbitrage = arbitrage
         self.zen_related = zen_related
+        self.has_bad_text = has_bad_text
+        self.had_bad_image = had_bad_image
         # self.using_direct = using_direct
 
     def get_static_stats(self, response):
         my_data = response.css("script#all-data::text").get().encode('utf-8').strip().decode()
-        my_ind = my_data.index("window._data = ")
-        my_ind_fin = my_data.index("window._uatraits =")
-        # ending = my_data[:my_ind_fin].rfind(';')
-        # beginning = my_data[my_ind:].index("{")
-        # json_string = my_data[my_data[my_ind:].index("{")+my_ind:my_data[:my_ind_fin].rfind(';')]
+        try:
+            my_ind = my_data.index("window._data = ")
+            my_ind_fin = my_data.index("window._uatraits =")
+        except ValueError:
+            my_ind = my_data.index("w._data = ")
+            my_ind_fin = my_data.index("w._uatraits =")
         my_json = json.loads(my_data[my_data[my_ind:].index("{")+my_ind:my_data[:my_ind_fin].rfind(';')])
         # print(json.dumps(my_json, indent=4, sort_keys=True)) # - a tangible output
         try:
@@ -48,15 +51,22 @@ class Galleries:
         link = ""
         tmp = False
         for i in search_scope['items']:
-            for j in i["rich_text"]["json"]:
-                if "attribs" in j.keys():
-                    if "href" in j["attribs"].keys():
-                        link = j["attribs"]["href"]
-                        for i in non_arbitrage:  # проверка на ссылочный мусор
-                            if (link).find(i) != -1:
-                                tmp = True
-                                link = ""
-                                break
+            try:
+                if i['has_bad_text']:
+                    self.has_bad_text = True
+                if i['had_bad_image']:
+                    self.had_bad_image = True
+                for j in i["rich_text"]["json"]:
+                    if "attribs" in j.keys():
+                        if "href" in j["attribs"].keys():
+                            link = j["attribs"]["href"]
+                            for i in non_arbitrage:  # проверка на ссылочный мусор
+                                if (link).find(i) != -1:
+                                    tmp = True
+                                    link = ""
+                                    break
+            except KeyError:
+                pass
 
         if_link = None or link
 
@@ -68,9 +78,9 @@ class Galleries:
         self.created_at = datestamp
         self.modified_at = mod_datestamp
 
-class Articles:
 
-    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False, using_direct=False):
+class Articles:
+    def __init__(self, created_at, modified_at, header, url, views=-1, reads=-1, arb_link='', arbitrage=False, streaming=False, form=False, zen_related=False, using_direct=False, has_bad_text=False, had_bad_image=False):
         self.created_at = created_at
         self.modified_at = modified_at
         self.header = header
@@ -83,6 +93,8 @@ class Articles:
         self.streaming = streaming
         self.zen_related = zen_related
         self.using_direct = using_direct
+        self.has_bad_text = has_bad_text
+        self.had_bad_image = had_bad_image
 
     def __str__(self):
         return f'{str(vars(self))}'
@@ -378,7 +390,9 @@ class ExampleSpider(scrapy.Spider):
             arbitrage=article.arbitrage,
             form=article.form,
             streaming=article.streaming,
-            zen_related=article.zen_related
+            zen_related=article.zen_related,
+            has_bad_text=article.has_bad_text,
+            had_bad_image=article.had_bad_image
         )
         return item
 
@@ -393,7 +407,9 @@ class ExampleSpider(scrapy.Spider):
                 reads=gallery.reads,
                 arb_link=gallery.arb_link,
                 arbitrage=gallery.arbitrage,
-                zen_related=gallery.zen_related
+                zen_related=gallery.zen_related,
+                has_bad_text=gallery.has_bad_text,
+                had_bad_image=gallery.had_bad_image
         )
         return item
 
@@ -420,7 +436,15 @@ class ExampleSpider(scrapy.Spider):
             publication.modified_at = mod_datestamp
         except KeyError:
             pass
-
+        try:
+            search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
+            for i in search_scope['items']:
+                if i['has_bad_text']:
+                    publication.has_bad_text = True
+                if i['had_bad_image']:
+                    publication.had_bad_image = True
+        except Exception:
+            pass
 
 
     @staticmethod
