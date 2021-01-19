@@ -53,20 +53,32 @@ REDIRECT_MAX_TIMES = 5
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
-    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 420,
+    # 'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 420,
     'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': None,
-    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
+    # 'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400, # TODO check if commenting it breaks everything
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
-    # 'ZenCrawlerSource.middlewares.OnlyExceptionsProxified': 120,
+    'ZenCrawlerSource.middlewares.FortyGrandRequestsMiddleware': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-    'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
+    # 'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
+    'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
+    'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401
 }
 
 # LOG_FILE = "logs.txt"
-RANDOM_UA_PER_PROXY = False
-RANDOM_UA_TYPE = 'desktop.chrome'
+# RANDOM_UA_PER_PROXY = False
+# RANDOM_UA_TYPE = 'desktop.random'
+
+FAKEUSERAGENT_PROVIDERS = [
+    'scrapy_fake_useragent.providers.FakeUserAgentProvider',  # this is the first provider we'll try
+    'scrapy_fake_useragent.providers.FakerProvider',  # if FakeUserAgentProvider fails, we'll use faker to generate a user-agent string for us
+    'scrapy_fake_useragent.providers.FixedUserAgentProvider',  # fall back to USER_AGENT value
+]
+
+USER_AGENT = 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2'
+
+FAKE_USERAGENT_RANDOM_UA_TYPE = 'desktop'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -104,7 +116,7 @@ HTTPERROR_ALLOWED_CODES = []  # actually, spider doesn't get non-200 responses t
 # Memory Debugger Ext SETTINGS
 MEMDEBUG_ENABLED = False
 
-RETRY_ENABLED = False
+RETRY_ENABLED = True
 
 # CloseSpider Ext SETTINGS - ANCHOR
 # Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
