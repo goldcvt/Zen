@@ -348,7 +348,7 @@ class ExampleSpider(scrapy.Spider):
         pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
         views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
 
-        try:
+        try:  # вот такое чувство, что все ломается именно здесь - потому и не было явных ошибок
             yield response.follow(views_req_url, callback=self.get_reads, cb_kwargs=dict(publication=article))
         except Exception:
             art_item = self.itemize_article(article)
