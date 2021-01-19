@@ -170,6 +170,132 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
+# ##########CURRENT##########CURRENT##########CURRENT#################################
+class FortyGrandRequestsMiddleware:
+    def __init__(self):  # added connection to db
+        self.db = "proxies"
+        self.usr = "postgres"
+        self.pswd = "postgres"
+        self.hst = "127.0.0.1"
+        self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+        self.current_proxy = self.proxify()
+
+    def ban_proxy(self, request):
+        adr_port = request.meta['proxy'].split("/")[-1]
+        curs = self.conn().cursor
+        req = f"UPDATE proxies SET banned_by_yandex=True WHERE address='{adr_port}';"
+        curs.execute(req)
+        curs.close()
+
+    def proxify(self):
+        req = "SELECT id,address,type FROM proxies WHERE banned_by_yandex = False ORDER BY response_time DESC LIMIT 1;"
+        curs = self.conn.cursor()
+        curs.execute(req)
+        self.conn.commit()
+        return curs.fetchone()[3] + "://" + curs.fetchone()[1]
+        curs.close()
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls()  # also calls __init__
+        crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
+        crawler.signals.connect(s.close_spider, signal=signals.spider_closed)
+        return s
+
+    def open_spider(self, spider):  # isn't being called upon spider's opening))
+        spider.logger.warning(f"self.conn established: {self.conn}")  # TODO that's a new ONE! check it
+
+    def close_spider(self, spider):
+        self.conn.close()  # можно сигналом закрывать соединение
+        spider.logger.warning(f"self.conn closed")
+
+    def process_request(self, request, spider):
+        if request.dont_filter:  # fixes infinite retrying TODO check if that's correct
+            request.dont_filter = False
+        spider.logger.warning("Processing: " +request.url)
+        if 'proxy' not in request.meta:
+            # picking a proxy TODO vary parameters of picking
+            request.meta['proxy'] = self.current_proxy
+            spider.logger.warning(f"Current proxy: {self.current_proxy}")
+        elif request.meta['proxy'] != self.current_proxy:
+            request.meta['proxy'] = self.current_proxy
+            spider.logger.warning(f"Current proxy: {self.current_proxy}")
+        elif request.meta['proxy'] == '':
+            self.current_proxy = self.proxify()
+            request.meta = self.current_proxy
+        return None
+
+    def process_response(self, request, response, spider):
+        spider.logger.warning(f"Response status is {response.status}")
+        if response.url.find("zen.yandex.ru/") != -1 and response.url.find("zen.yandex.ru/media") == -1: # test w/ TOR TODO
+            global chans_processed
+            chans_processed += 1
+            spider.logger.warning("Processed %i channel(s) out of 400.000, that's about %F percent done"
+                                  % (chans_processed, chans_processed / 4000))  # console log
+        # 4xx errors handler
+        if response.status == 200:
+            return response
+
+        elif response.status not in [404] + [i for i in range(300, 310, 1)]:
+            if 'proxy' in request.meta:
+                if request.meta['proxy'] != '':
+                    self.ban_proxy(request)
+                self.current_proxy = self.proxify()
+                request.meta['proxy'] = self.current_proxy
+                request.dont_filter = True
+                return request
+            else:
+                self.current_proxy = self.proxify()
+                request.meta['proxy'] = self.current_proxy
+                request.dont_filter = True
+                return request
+
+        # elif response.status in [i for i in range(300, 310, 1)]:
+        #     if response.url !=
+
+        elif response.status == 404: # вообще-то, подозрительно) TODO если их будет оч много, научимся обходить)
+            return None  # or shall we return response...
+
+        else: # на всякий случай))))))
+            raise Exception
+
+    # TODO доделать тут
+    def process_exception(self, request, exception, spider):
+        try:
+            if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
+                # blacklisting a proxy
+                self.ban_proxy(request)
+                # proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                request.meta['proxy'] = ''  # proxy.get_address()
+                # spider.logger.warning(f"{self.conn.closed}") # returns 0 or 1
+            # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
+            # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
+            elif not self.conn:
+                raise AttributeError
+
+        except KeyError:  # always getting triggered. TODO rework rotation logic around this
+            # traceback.print_exc()
+            request.meta['proxy'] = ''
+            spider.logger.warning("Forced proxy exception")
+
+        except InterfaceError:
+            spider.logger.warning("Could not connect to db, conn closed, re-establishing")
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            if request.meta['proxy'] != '':
+                self.ban_proxy(request)
+                # proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
+                request.meta['proxy'] = ''
+
+        except AttributeError: # could lead to more complicated bugs, but it'll do just fine if works
+            spider.logger.warning("finally, AttributeError")
+            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+
+        request.dont_filter = True # makes process_request work on handled request
+        return request
+###############################################################################
+
+
 # class IPNoRetryDownloaderMiddleware: - deprecated
 class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retries due to redirect so...
     def __init__(self):  # added connection to db
@@ -290,8 +416,7 @@ class ZencrawlersourceDownloaderMiddleware:  # i mean, we don't really need retr
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
 
         request.dont_filter = True # makes process_request work on handled request
-        return request # такое чувство, что вот здесь хуйня фильтрует лишнего. типа когда снимаешь фильтры,
-        # запросы норм идут
+        return request
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
