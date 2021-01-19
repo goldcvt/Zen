@@ -418,34 +418,34 @@ class ExampleSpider(scrapy.Spider):
     def get_date(publication, response):
         try:
             my_data = response.css("script#all-data::text").get().encode('utf-8').strip().decode()
-            my_ind = my_data.index("window._data = ")
-            my_ind_fin = my_data.index("window._uatraits =")
+            try:
+                my_ind = my_data.index("window._data = ")
+                my_ind_fin = my_data.index("window._uatraits =")
+            except ValueError:
+                my_ind = my_data.index("w._data = ")
+                my_ind_fin = my_data.index("w._uatraits =")
             my_json = json.loads(my_data[my_data[my_ind:].index("{") + my_ind:my_data[:my_ind_fin].rfind(';')])
+            datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
+            publication.created_at = datestamp
+            mod_datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"]) / 1000))
+            publication.modified_at = mod_datestamp
+
         except Exception:
             d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
             publication.created_at = ExampleSpider.get_date_old(d_str)
             publication.modified_at = ExampleSpider.get_date_old(d_str)
             del d_str
-        try:
-            datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
-            publication.created_at = datestamp
-        except KeyError:
-            pass
-        try:
-            mod_datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"]) / 1000))
-            publication.modified_at = mod_datestamp
-        except KeyError:
-            pass
-        try:
+
+        else:
             search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
             for i in search_scope['items']:
-                if i['has_bad_text']:
-                    publication.has_bad_text = True
-                if i['had_bad_image']:
-                    publication.had_bad_image = True
-        except Exception:
-            pass
-
+                try:
+                    if i['has_bad_text']:
+                        publication.has_bad_text = True
+                    if i['had_bad_image']:
+                        publication.had_bad_image = True
+                except Exception:
+                    pass
 
     @staticmethod
     def get_date_old(datestring):
