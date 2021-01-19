@@ -339,7 +339,7 @@ class ExampleSpider(scrapy.Spider):
         title = response.css("div#article__page-root h1.article__title::text").get().encode('utf-8').strip()
         if title:
             title = title.decode().replace("'", "")
-        # d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
+        # d_str = response.css("footer.article__statistics span.article-stat__date::text").get() # а теперь вместо спана простой див без класса, без нихуя
         base_date = datetime.date(1900, 12, 12)
 
         article = Articles(base_date, base_date, title, response.url)
@@ -444,15 +444,14 @@ class ExampleSpider(scrapy.Spider):
                 my_ind = my_data.index("w._data = ")
                 my_ind_fin = my_data.index("w._uatraits =")
             my_json = json.loads(my_data[my_data[my_ind:].index("{") + my_ind:my_data[:my_ind_fin].rfind(';')])
-            datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
-            publication.created_at = datestamp
-            mod_datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"]) / 1000))
-            publication.modified_at = mod_datestamp
+            publication.created_at = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
+            publication.modified_at = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"]) / 1000))
 
         except Exception:
             d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
-            publication.created_at = ExampleSpider.get_date_old(d_str)
-            publication.modified_at = ExampleSpider.get_date_old(d_str)
+            if not d_str:
+                d_str = response.css("footer.article__statistics div::text").get()
+            publication.created_at = publication.modified_at = ExampleSpider.get_date_old(d_str)
             del d_str
 
         else:
