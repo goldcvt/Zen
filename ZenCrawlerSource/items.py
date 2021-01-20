@@ -43,6 +43,8 @@ class ChannelItem(scrapy.Item):
     # whether_crawled = scrapy.Field()
     last_checked = scrapy.Field()
     # is_streaming = scrapy.Field()
+    streaming_since = scrapy.Field()
+    arbitrage_since = scrapy.Field()
 
 
 class GalleryItem(scrapy.Item):
