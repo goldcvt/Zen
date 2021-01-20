@@ -158,13 +158,13 @@ class Articles:
 
 class Channels:
 
-    def __init__(self, subs, audience, url, links=None, arbitrage_since=None, streaming_since=None):
+    def __init__(self, subs, audience, url, links=None):
         self.subs = int(subs)
         self.audience = int(audience)
         self.url = url
         self.links = links or []
-        self.arbitrage_since = arbitrage_since
-        self.streaming_since = streaming_since
+        # self.arbitrage_since = arbitrage_since
+        # self.streaming_since = streaming_since
         # self.articles = articles or []
         # self.arbitrage = arbitrage
         # self.form = form
@@ -391,9 +391,7 @@ class ExampleSpider(scrapy.Spider):
             audience=channel.audience,
             url=channel.url,
             contacts=channel.links,
-            last_checked=datetime.datetime.now(),
-            arbitrage_since=channel.arbitrage_since,
-            streaming_since=channel.streaming_since
+            last_checked=datetime.datetime.now()
         )
         return item
 
