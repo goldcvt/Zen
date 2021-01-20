@@ -245,7 +245,7 @@ class ExampleSpider(scrapy.Spider):
 
     def parse(self, response):
         for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
-            if a != "media/zen/channels": # DONE теперь итерация правильная
+            if "firstChars" in a:  # можно впрочем итерироваться и не по буквам) тогда соотв. наоборот not
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=True)
 
     def parse_by_letter(self, response):
@@ -331,7 +331,7 @@ class ExampleSpider(scrapy.Spider):
 
         # TODO check here
         if other_pubs and gall.created_at > (datetime.date.today() - datetime.timedelta(days=10)):
-            yield response.follow_all(other_pubs,
+            yield from response.follow_all(other_pubs,
                                      callback=self.fetch_gallery
                                      )
 
@@ -339,7 +339,7 @@ class ExampleSpider(scrapy.Spider):
         title = response.css("div#article__page-root h1.article__title::text").get().encode('utf-8').strip()
         if title:
             title = title.decode().replace("'", "")
-        # d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
+        # d_str = response.css("footer.article__statistics span.article-stat__date::text").get() # а теперь вместо спана простой див без класса, без нихуя
         base_date = datetime.date(1900, 12, 12)
 
         article = Articles(base_date, base_date, title, response.url)
@@ -348,7 +348,7 @@ class ExampleSpider(scrapy.Spider):
         pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
         views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
 
-        try:
+        try:  # вот такое чувство, что все ломается именно здесь - потому и не было явных ошибок
             yield response.follow(views_req_url, callback=self.get_reads, cb_kwargs=dict(publication=article))
         except Exception:
             art_item = self.itemize_article(article)
@@ -356,7 +356,7 @@ class ExampleSpider(scrapy.Spider):
 
         #TODO pay attention
         if other_pubs and article.created_at > (datetime.date.today() - datetime.timedelta(days=10)):
-            yield response.follow_all(other_pubs,
+            yield from response.follow_all(other_pubs,
                                      callback=self.fetch_article
                                      )
 
@@ -444,15 +444,14 @@ class ExampleSpider(scrapy.Spider):
                 my_ind = my_data.index("w._data = ")
                 my_ind_fin = my_data.index("w._uatraits =")
             my_json = json.loads(my_data[my_data[my_ind:].index("{") + my_ind:my_data[:my_ind_fin].rfind(';')])
-            datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
-            publication.created_at = datestamp
-            mod_datestamp = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"]) / 1000))
-            publication.modified_at = mod_datestamp
+            publication.created_at = datetime.date.fromtimestamp(int(int(my_json["publication"]["addTime"]) / 1000))
+            publication.modified_at = datetime.date.fromtimestamp(int(int(my_json["publication"]["content"]["modTime"]) / 1000))
 
         except Exception:
             d_str = response.css("footer.article__statistics span.article-stat__date::text").get()
-            publication.created_at = ExampleSpider.get_date_old(d_str)
-            publication.modified_at = ExampleSpider.get_date_old(d_str)
+            if not d_str:
+                d_str = response.css("footer.article__statistics div::text").get()
+            publication.created_at = publication.modified_at = ExampleSpider.get_date_old(d_str)
             del d_str
 
         else:
