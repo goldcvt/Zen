@@ -7,7 +7,10 @@ from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
 import traceback
-
+from proxy_checker import check_in_db
+# from twisted.internet.error import ConnectionLost
+# from twisted.web.http import _DataLoss
+from twisted.web._newclient import RequestNotSent, ResponseFailed, ResponseNeverReceived
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 from crawler_toolz import proxy_ops, db_ops
@@ -192,8 +195,13 @@ class FortyGrandRequestsMiddleware:
         curs = self.conn.cursor()
         curs.execute(req)
         self.conn.commit()
-        return curs.fetchone()[3] + "://" + curs.fetchone()[1]
+        p_els = curs.fetchone()
         curs.close()
+        if p_els:
+            return p_els[3] + "://" + p_els[1]
+        else:
+            return ''
+
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -204,18 +212,17 @@ class FortyGrandRequestsMiddleware:
         return s
 
     def open_spider(self, spider):  # isn't being called upon spider's opening))
-        spider.logger.warning(f"self.conn established: {self.conn}")  # TODO that's a new ONE! check it
+        spider.logger.warning(f"self.conn established: {self.conn}")
 
-    def close_spider(self, spider):
+    def close_spider(self, spider, reason=''):
         self.conn.close()  # можно сигналом закрывать соединение
         spider.logger.warning(f"self.conn closed")
 
     def process_request(self, request, spider):
-        if request.dont_filter:  # fixes infinite retrying TODO check if that's correct
+        if request.dont_filter:
             request.dont_filter = False
         spider.logger.warning("Processing: " +request.url)
         if 'proxy' not in request.meta:
-            # picking a proxy TODO vary parameters of picking
             request.meta['proxy'] = self.current_proxy
             spider.logger.warning(f"Current proxy: {self.current_proxy}")
         elif request.meta['proxy'] != self.current_proxy:
@@ -228,12 +235,11 @@ class FortyGrandRequestsMiddleware:
 
     def process_response(self, request, response, spider):
         spider.logger.warning(f"Response status is {response.status}")
-        if response.url.find("zen.yandex.ru/") != -1 and response.url.find("zen.yandex.ru/media") == -1: # test w/ TOR TODO
+        if response.url.find("zen.yandex.ru/") != -1 and response.url.find("zen.yandex.ru/media") == -1:
             global chans_processed
             chans_processed += 1
             spider.logger.warning("Processed %i channel(s) out of 400.000, that's about %F percent done"
                                   % (chans_processed, chans_processed / 4000))  # console log
-        # 4xx errors handler
         if response.status == 200:
             return response
 
@@ -263,35 +269,38 @@ class FortyGrandRequestsMiddleware:
     # TODO доделать тут
     def process_exception(self, request, exception, spider):
         try:
-            if request.meta['proxy'] != '':  # if there's a proxy, it's a bad one
-                # blacklisting a proxy
+            spider.logger.warning(exception + " happened, so we re-checking proxies, crawling halted")
+            if request.meta['proxy'] != '' or exception in [RequestNotSent, ResponseFailed, ResponseNeverReceived]:
                 self.ban_proxy(request)
-                # proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                request.meta['proxy'] = ''  # proxy.get_address()
-                # spider.logger.warning(f"{self.conn.closed}") # returns 0 or 1
-            # proxy = proxy_ops.Proxy.get_type_proxy(self.conn, 0, 0)
-            # TODO возожно, здесь стоит брать новую рандомную проксю, так мб будет быстрее
+                check_in_db(self.conn)
+                self.current_proxy = self.proxify()
+                request.meta['proxy'] = self.current_proxy
+                spider.logger.warning("Successfully found new proxy, keep on with " + self.current_proxy)
+                if self.current_proxy == '':
+                    spider.logger.warning("Ran out of proxies, can't continue")
+                    self.close_spider(spider, "No proxies to crawl with")
             elif not self.conn:
                 raise AttributeError
-
-        except KeyError:  # always getting triggered. TODO rework rotation logic around this
-            # traceback.print_exc()
-            request.meta['proxy'] = ''
-            spider.logger.warning("Forced proxy exception")
 
         except InterfaceError:
             spider.logger.warning("Could not connect to db, conn closed, re-establishing")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
             if request.meta['proxy'] != '':
                 self.ban_proxy(request)
-                # proxy_ops.Proxy.get_from_string(self.conn, request.meta['proxy']).blacklist(self.conn)
-                request.meta['proxy'] = ''
+                check_in_db(self.conn)
+                self.current_proxy = self.proxify()
+                request.meta['proxy'] = self.current_proxy
 
-        except AttributeError: # could lead to more complicated bugs, but it'll do just fine if works
-            spider.logger.warning("finally, AttributeError")
+        except AttributeError:   # could lead to more complicated bugs, but it'll do just fine if works
+            spider.logger.warning("Lost connection to proxy_db, re-establishing")
             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+            if request.meta['proxy'] != '':
+                self.ban_proxy(request)
+                check_in_db(self.conn)
+                self.current_proxy = self.proxify()
+                request.meta['proxy'] = self.current_proxy
 
-        request.dont_filter = True # makes process_request work on handled request
+        request.dont_filter = True
         return request
 ###############################################################################
 
