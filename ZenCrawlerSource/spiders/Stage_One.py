@@ -158,16 +158,18 @@ class Articles:
 
 class Channels:
 
-    def __init__(self, subs, audience, url, links=None, articles=None, arbitrage=False, form=False, is_crawled=False, streaming=False):
+    def __init__(self, subs, audience, url, links=None, arbitrage_since=None, streaming_since=None):
         self.subs = int(subs)
         self.audience = int(audience)
         self.url = url
         self.links = links or []
-        self.articles = articles or []
-        self.arbitrage = arbitrage
-        self.form = form
-        self.is_crawled = is_crawled
-        self.is_streaming = streaming
+        self.arbitrage_since = arbitrage_since
+        self.streaming_since = streaming_since
+        # self.articles = articles or []
+        # self.arbitrage = arbitrage
+        # self.form = form
+        # self.is_crawled = is_crawled
+        # self.is_streaming = streaming
 
     def __str__(self):
         my_dict = vars(self)
@@ -196,29 +198,29 @@ class Channels:
         if contacts:
             self.links = contacts
 
-    def is_arbitrage(self, number_of_articles):
-        i = 0
-        for article in self.articles:
-            if article.arbitrage:
-                i += 1
-            if article.form and not self.form:
-                self.form = True
-            if article.streaming:
-                self.is_streaming = True
+    # def is_arbitrage(self, number_of_articles):
+    #     i = 0
+    #     for article in self.articles:
+    #         if article.arbitrage:
+    #             i += 1
+    #         if article.form and not self.form:
+    #             self.form = True
+    #         if article.streaming:
+    #             self.is_streaming = True
+    #
+    #     if i/number_of_articles >= 0.5:
+    #         self.arbitrage = True
+    #     else:
+    #         self.arbitrage = False
 
-        if i/number_of_articles >= 0.5:
-            self.arbitrage = True
-        else:
-            self.arbitrage = False
-
-    def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
-        found = db_ops.read_from_db(conn, "channels", "channel_id", where="url='{}'".format(self.url))
-        # DEBUG а мы что возвращаем?)
-        if found:
-            self.is_crawled = True
-            return True
-        else:
-            return False
+    # def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
+    #     found = db_ops.read_from_db(conn, "channels", "channel_id", where="url='{}'".format(self.url))
+    #     # DEBUG а мы что возвращаем?)
+    #     if found:
+    #         self.is_crawled = True
+    #         return True
+    #     else:
+    #         return False
 
 # class JSSpider(scrapy.Spider): # splash проще в 100500 раз... Но и он не нужен))
 #     name = "js_nightcrawler"
@@ -385,11 +387,13 @@ class ExampleSpider(scrapy.Spider):
     @staticmethod
     def itemize_channel(channel):
         item = ChannelItem(
-                                subs=channel.subs,
-                                audience=channel.audience,
-                                url=channel.url,
-                                contacts=channel.links, # может вызывать проблемы
-                                last_checked=datetime.datetime.now()
+            subs=channel.subs,
+            audience=channel.audience,
+            url=channel.url,
+            contacts=channel.links,
+            last_checked=datetime.datetime.now(),
+            arbitrage_since=channel.arbitrage_since,
+            streaming_since=channel.streaming_since
         )
         return item
 
