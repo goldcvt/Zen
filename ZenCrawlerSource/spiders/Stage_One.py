@@ -125,6 +125,7 @@ class Articles:
         yt = response.css("div.youtube-embed").get()
         kino = response.css("div.kinopoisk-embed").get()
         y_direct = response.css("div.yandex-direct-embed").get()
+        donation = response.css("div.yandex-wallet-iframe").get()
         other_embeds = response.css("div.article-render__block_embed").getall() # bug fixed
         if y_direct:
             self.using_direct = True
@@ -132,7 +133,7 @@ class Articles:
             other_embeds = None
         if streaming:
             self.streaming = True
-        elif (not (y_music or kino or yt)) and (forms or other_embeds):
+        elif (not (y_music or kino or yt or donation)) and (forms or other_embeds):
             self.form = True
             self.arbitrage = True
 
