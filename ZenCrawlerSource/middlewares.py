@@ -176,7 +176,7 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
 # ##########CURRENT##########CURRENT##########CURRENT#################################
 class FortyGrandRequestsMiddleware:
     def __init__(self):  # added connection to db
-        self.db = "proxies"
+        self.db = "proxy_db"
         self.usr = "postgres"
         self.pswd = "postgres"
         self.hst = "127.0.0.1"
