@@ -1,12 +1,13 @@
 import scrapy
-from crawler_toolz import db_ops
 import datetime
 import re
-from ZenCrawlerSource.items import ChannelItem, ArticleItem, GalleryItem, ZencrawlersourceItem
 import json
+
+from ZenCrawlerSource.items import ChannelItem, ArticleItem, GalleryItem, ZencrawlersourceItem
 from tqdm import tqdm
 
-non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', 'vimeo', 'youtube', 'vk', "yandex.ru/news", "yandex.ru/images"]
+non_arbitrage = ['instagram.com', 'twitter.com', 'wikipedia.org', 'google.ru', 'vimeo', 'youtube', 'vk',
+                 "yandex.ru/news", "yandex.ru/images"]
 
 
 class Galleries:
@@ -25,8 +26,6 @@ class Galleries:
         self.had_bad_image = had_bad_image
         self.dark_post = dark_post
         self.native_ads = native_ads
-        # TODO darkPost, hasNativeAds support
-        # self.using_direct = using_direct
 
     def get_static_stats(self, response):
         my_data = response.css("script#all-data::text").get().encode('utf-8').strip().decode()
@@ -40,7 +39,7 @@ class Galleries:
         # print(json.dumps(my_json, indent=4, sort_keys=True)) # - a tangible output
         try:
             self.header = my_json["publication"]["content"]["preview"]["title"]
-        except:
+        except KeyError:
             self.header = "error"
         self.header = self.header.replace("'", "")
         try:
@@ -164,13 +163,6 @@ class Channels:
         self.audience = int(audience)
         self.url = url
         self.links = links or []
-        # self.arbitrage_since = arbitrage_since
-        # self.streaming_since = streaming_since
-        # self.articles = articles or []
-        # self.arbitrage = arbitrage
-        # self.form = form
-        # self.is_crawled = is_crawled
-        # self.is_streaming = streaming
 
     def __str__(self):
         my_dict = vars(self)
@@ -199,46 +191,6 @@ class Channels:
         if contacts:
             self.links = contacts
 
-    # def is_arbitrage(self, number_of_articles):
-    #     i = 0
-    #     for article in self.articles:
-    #         if article.arbitrage:
-    #             i += 1
-    #         if article.form and not self.form:
-    #             self.form = True
-    #         if article.streaming:
-    #             self.is_streaming = True
-    #
-    #     if i/number_of_articles >= 0.5:
-    #         self.arbitrage = True
-    #     else:
-    #         self.arbitrage = False
-
-    # def if_crawled(self, conn): # чекаем, что уже есть в нашей дб) тогда тащем-та столбец my не имеет смысла
-    #     found = db_ops.read_from_db(conn, "channels", "channel_id", where="url='{}'".format(self.url))
-    #     # DEBUG а мы что возвращаем?)
-    #     if found:
-    #         self.is_crawled = True
-    #         return True
-    #     else:
-    #         return False
-
-# class JSSpider(scrapy.Spider): # splash проще в 100500 раз... Но и он не нужен))
-#     name = "js_nightcrawler"
-#
-#     allowed_domains = ["zen.yandex.ru"]
-#
-#     def __init__(self, url=None, *args, **kwargs):
-#         super(JSSpider, self).__init__(*args, **kwargs)
-#         self.start_urls = [f'{url}']
-#
-#     def parse(self, response):
-#         pass
-#
-#     # firing it:
-#     # process = CrawlerProcess(settings = {})
-#     # process.crawl(JSSpider, url)
-#     # process.start()
 
 class ExampleSpider(scrapy.Spider):
     name = "nightcrawler"
@@ -273,7 +225,8 @@ class ExampleSpider(scrapy.Spider):
                     yield response.follow(chan, callback=self.parse_channel)
 
     def parse_channel(self, response): # DONE перевели на классы
-        self.logger.info("Channel name: " + response.css("div.zen-app div.channel-header-view-desktop__info-block h1 span::text").get())
+        self.logger.info("Channel name: " +
+                         response.css("div.zen-app div.channel-header-view-desktop__info-block h1 span::text").get())
         default_stats = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__value::text").getall()
         stat_kword = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__name::text").get()
         # DONE implemented PC UA
@@ -517,8 +470,14 @@ class ExampleSpider(scrapy.Spider):
         return final_date
     
     def closed(self, reason):
-        self.logger.warning("All done, master")
-    #   self.zen_conn.close()
-    #   self.proxy_conn.close()
+        self.logger.warning("Job's done")
 
-    # return True, если всё нормально. Иначе false
+
+class MySpider(scrapy.Spider):
+    name = "ip_spider"
+
+    allowed_domains = ["httpbin.org"]
+    start_urls = ["https://httpbin.org/ip"]
+
+    def parse(self, response):
+        print("Visible IP: " + json.loads(response)["origin"])
