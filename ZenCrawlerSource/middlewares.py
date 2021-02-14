@@ -6,7 +6,7 @@ from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
-import traceback
+
 from proxy_checker import check_in_db
 # from twisted.internet.error import ConnectionLost
 # from twisted.web.http import _DataLoss
@@ -171,6 +171,32 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+class SplashSocksDownloaderMiddleware:
+    @staticmethod
+    def get_proxy():
+        proxy = ''
+        return proxy
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls(crawler.settings)
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+
+    def process_request(self, request, spider):
+        if 'proxy' not in request.meta:
+            proxy = self.get_proxy()
+            if proxy.type_.find('socks') != -1:
+                pass  # TODO add splash-request
+
+    def process_response(self, request, response, spider):
+        pass
+
+    def process_exception(self, request, exception, spider):
+        pass
 
 
 # ##########CURRENT##########CURRENT##########CURRENT#################################
