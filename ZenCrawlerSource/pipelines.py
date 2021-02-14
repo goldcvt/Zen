@@ -27,7 +27,9 @@ class ZencrawlersourcePipeline:
             f.write(str(vars(item)))
         return item
 
-# DONE написать исправлялку, если соединение с БД наебнется
+
+class EmptyPipeline:
+    pass
 
 
 class ChannelPipeline:

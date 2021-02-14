@@ -42,6 +42,11 @@ DEFAULT_REQUEST_HEADERS = {
   'Accept-Language': 'ru-RU,ru;q=0.9',
 }
 
+# DOWNLOAD_HANDLERS = {
+#         'http': 'ZenCrawlerSource.downloader.Socks5DownloadHandler',
+#         'https': 'ZenCrawlerSource.downloader.Socks5DownloadHandler'
+# }
+
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 SPIDER_MIDDLEWARES = {
@@ -59,26 +64,28 @@ DOWNLOADER_MIDDLEWARES = {
     # 'ZenCrawlerSource.middlewares.IPNoRetryDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
-    'ZenCrawlerSource.middlewares.FortyGrandRequestsMiddleware': 120,
+    # 'ZenCrawlerSource.middlewares.FortyGrandRequestsMiddleware': 120,
+    'ZenCrawlerSource.middlewares.SocksTestDownloaderMiddleware': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     # 'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
-    'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
-    'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401
+    # 'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
+    # 'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401
 }
 
 # LOG_FILE = "logs.txt"
 # RANDOM_UA_PER_PROXY = False
 # RANDOM_UA_TYPE = 'desktop.random'
 
-FAKEUSERAGENT_PROVIDERS = [
-    'scrapy_fake_useragent.providers.FakeUserAgentProvider',  # this is the first provider we'll try
-    'scrapy_fake_useragent.providers.FakerProvider',  # if FakeUserAgentProvider fails, we'll use faker to generate a user-agent string for us
-    'scrapy_fake_useragent.providers.FixedUserAgentProvider',  # fall back to USER_AGENT value
-]
-
-USER_AGENT = 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2'
-
-FAKE_USERAGENT_RANDOM_UA_TYPE = 'desktop'
+# FAKEUSERAGENT LIB
+# FAKEUSERAGENT_PROVIDERS = [
+#     # 'scrapy_fake_useragent.providers.FakeUserAgentProvider',  # this is the first provider we'll try
+#     'scrapy_fake_useragent.providers.FakerProvider',  # if FakeUserAgentProvider fails, we'll use faker to generate a user-agent string for us
+#     'scrapy_fake_useragent.providers.FixedUserAgentProvider',  # fall back to USER_AGENT value
+# ]
+#
+# USER_AGENT = 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2'
+#
+# FAKER_RANDOM_UA_TYPE = 'desktop'
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -94,7 +101,8 @@ DUPEFILTER_DEBUG = False
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     # 'ZenCrawlerSource.pipelines.ZencrawlersourcePipeline': 300,
-    'ZenCrawlerSource.pipelines.ChannelPipeline': 150,
+    # 'ZenCrawlerSource.pipelines.ChannelPipeline': 150,
+    'ZenCrawlerSource.pipelines.EmptyPipeline': 150,
     # 'ZenCrawlerSource.pipelines.SpeedTestPipeline': 150
 }
 
