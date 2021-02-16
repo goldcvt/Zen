@@ -6,7 +6,7 @@ from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
-
+from ZenCrawlerSource.utils.local_resource_manager import DeleGatePortManager
 from proxy_checker import check_in_db
 # from twisted.internet.error import ConnectionLost
 # from twisted.web.http import _DataLoss
@@ -173,7 +173,19 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class SplashSocksDownloaderMiddleware:
+class LatestDownloaderMiddleware:
+    def __init__(self):
+        self.proxy_conn = None
+        self.port_manager = DeleGatePortManager()
+
+    @staticmethod
+    def start_delegated():
+        pass
+
+    @staticmethod
+    def stop_delegated():
+        pass
+
     @staticmethod
     def get_proxy():
         proxy = ''
