@@ -103,12 +103,12 @@ class Proxy(peewee.Model):
     __repr__ = __str__
 
 
-class Blacklisted(peewee.Model):
+class BannedByYandexProxy(peewee.Model):
     class Meta:
         database = raw_db
         db_table = "banned_by_yandex"
 
-    _proxy_id = peewee.ForeignKeyField(Proxy, backref="")
+    _proxy_id = peewee.ForeignKeyField(Proxy, backref="bannedbyyandex")
     _banned_at = peewee.DateTimeField(default=datetime.datetime.now(), null=True)
     last_check = peewee.DateTimeField(null=True)
 

@@ -1,5 +1,6 @@
-from ZenCrawlerSource.utils.models import Proxy
+from ZenCrawlerSource.utils.models import Proxy, BannedByYandexProxy, raw_db
 from psycopg2 import connect
+from datetime import datetime
 
 
 class DeleGatePortManager:
@@ -26,28 +27,21 @@ class DeleGatePortManager:
 
 
 class ProxyManager:
-    db_host = None
-    db_uname = None
-    db_pass = None
-    proxy_db = None
-    blacklist_db = None
+    @staticmethod
+    def get_proxy(proto):
+        proxy = Proxy.select().where(Proxy.protocol == proto, Proxy.number_of_bad_checks == 0).order_by(
+            Proxy.last_check_time.desc()).limit(1)
+        if proxy:
+            proxy = proxy.to_url(protocol=proto)
+            return proxy
 
     @staticmethod
-    def connect_to_db(dbname):
-        conn = connect(ProxyManager.db_host, ProxyManager.db_uname, ProxyManager.db_pass, dbname)
-        return conn
+    def blacklist_proxy(proxy):
+        BannedByYandexProxy.create(_banned_at, _proxy_id=proxy.id, last_check=None)
 
-    def __init__(self, proxy_db_conn=None, blacklist_db_conn=None):
-        self.proxy_db_conn = proxy_db_conn
-        self.blacklist_db_conn = blacklist_db_conn
-
-    def get_proxy(self, proxy, dbname=proxy_db):
-        if not self.proxy_db_conn:
-            self.proxy_db_conn = self.connect_to_db(dbname)
-
-    def blacklist_proxy(self, proxy, dbname=blacklist_db):
-        if not self.blacklist_db_conn:
-            self.blacklist_db_conn = self.connect_to_db(dbname)
+    @staticmethod
+    def free_from_blacklist(proxy):
+        proxy.delete_instance()
 
 
 if __name__ == "__main__":
