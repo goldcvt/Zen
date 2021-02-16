@@ -132,6 +132,15 @@ RETRY_ENABLED = True
 # CLOSESPIDER_ITEMCOUNT = 10
 # CLOSESPIDER_TIMEOUT = 720000
 
+DATABASE_CONNECTION_ARGS = ()
+DATABASE_CONNECTION_KWARGS = {
+    'host': 'localhost',
+    'database': 'proxy_py',
+    'user': 'proxy_py',
+    'password': 'proxy_py',
+    'max_connections': 20,
+}
+
 TELNETCONSOLE_USERNAME = 'goldcat'
 TELNETCONSOLE_PASSWORD = 'scrapes'
 
