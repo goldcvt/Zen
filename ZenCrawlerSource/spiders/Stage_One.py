@@ -469,8 +469,8 @@ class ExampleSpider(scrapy.Spider):
 
         return final_date
     
-    def closed(self, reason):
-        self.logger.warning("Job's done")
+    def closed(self, reason="Done"):
+        self.logger.warning(reason)
 
 
 class MySpider(scrapy.Spider):
