@@ -48,6 +48,7 @@ class ProxyManager:
     def get_proxy(proto='http', bad_checks=0):
         proxy = Proxy.select().where(Proxy.protocol == proto, Proxy.number_of_bad_checks == bad_checks).order_by(
             Proxy.last_check_time.desc()).limit(1)  # TODO add condition for proxy being banned by yandex
+        # TODO add condition blocking RU proxy (or ability to choose proxy geo)
         if proxy:
             proxy = proxy.to_url(protocol=proto)
             return proxy
