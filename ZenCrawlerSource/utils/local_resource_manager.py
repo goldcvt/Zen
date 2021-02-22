@@ -1,6 +1,7 @@
 from ZenCrawlerSource.utils.models import Proxy, BannedByYandexProxy, raw_db
 from psycopg2 import connect
 from datetime import datetime
+import socket
 
 
 class DeleGatePortManager:
@@ -19,21 +20,40 @@ class DeleGatePortManager:
             self.used_ports = []
             self.used_ports.append(port)
 
-    def release_port(self, port):
+    def release_port(self, port):  # из request.meta достается номер порта при обработке исключения - когда умер прокси
         if self.used_ports is not None:
             self.used_ports.remove(port)
         else:
             pass
 
+    @staticmethod
+    def get_free_port():
+        """
+        Determines a free port using sockets.
+        """
+        free_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        free_socket.bind(('127.0.0.1', 0))
+        free_socket.listen(5)
+        port = free_socket.getsockname()[1]
+        free_socket.close()
+        return port
+
+
+class NoProxiesError(BaseException):
+    pass
+
 
 class ProxyManager:
     @staticmethod
-    def get_proxy(proto):
-        proxy = Proxy.select().where(Proxy.protocol == proto, Proxy.number_of_bad_checks == 0).order_by(
-            Proxy.last_check_time.desc()).limit(1)
+    def get_proxy(proto='http', bad_checks=0):
+        proxy = Proxy.select().where(Proxy.protocol == proto, Proxy.number_of_bad_checks == bad_checks).order_by(
+            Proxy.last_check_time.desc()).limit(1)  # TODO add condition for proxy being banned by yandex
         if proxy:
             proxy = proxy.to_url(protocol=proto)
             return proxy
+        else:
+            raise NoProxiesError
+
 
     @staticmethod
     def blacklist_proxy(proxy):
