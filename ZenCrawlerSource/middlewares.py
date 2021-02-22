@@ -6,7 +6,7 @@ from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
-from ZenCrawlerSource.utils.local_resource_manager import DeleGatePortManager
+from ZenCrawlerSource.utils.local_resource_manager import DeleGatePortManager, ProxyManager, NoProxiesError
 from proxy_checker import check_in_db
 # from twisted.internet.error import ConnectionLost
 # from twisted.web.http import _DataLoss
@@ -175,21 +175,17 @@ class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't n
 
 class LatestDownloaderMiddleware:
     def __init__(self):
-        self.proxy_conn = None
+        self.proxy_manager = ProxyManager()
         self.port_manager = DeleGatePortManager()
 
-    @staticmethod
-    def start_delegated():
-        pass
+    def start_delegated(self, proxy):
+        port = self.port_manager.get_free_port()
+        self.port_manager.used_ports.append(port)
+        pass   # TODO finish
+        return port
 
-    @staticmethod
-    def stop_delegated():
-        pass
-
-    @staticmethod
-    def get_proxy():
-        proxy = ''
-        return proxy
+    def stop_delegated(self, port):
+        pass   # TODO write
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -198,20 +194,50 @@ class LatestDownloaderMiddleware:
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
-    def process_request(self, request, spider):
+    def process_request(self, request, spider):  # TODO finish
+
+        if 'tries' not in request.meta:
+            request.meta['tries'] = 1
+        else:
+            request.meta['tries'] += 1
+
         if 'proxy' not in request.meta:
-            proxy = self.get_proxy()
-            if proxy.type_.find('socks') != -1:
-                pass  # TODO add splash-request
+            try:
+                proxy = self.proxy_manager.get_proxy(proto='http')
+            except NoProxiesError:
+                try:
+                    proxy = self.proxy_manager.get_proxy(proto='socks4')
+                except NoProxiesError:
+                    proxy = self.proxy_manager.get_proxy(proto='socks5')
+            # say, we managed to get some good proxies (not fallback)
+            if proxy.find('socks') == -1:
+                request.meta['delegate_port'] = self.start_delegated(request.meta['proxy'])
+            else:
+                pass
 
-    def process_response(self, request, response, spider):
+        if not request.meta['proxy']:  # сюда попадаем только когда кончились прокси и мы временно работаем на системном
+            request.meta['proxy'] = None
+
+        return None
+
+    def process_response(self, request, response, spider):  # TODO finish
         pass
 
-    def process_exception(self, request, exception, spider):
-        pass
+    def process_exception(self, request, exception, spider):  # TODO finish
+        if 'delegate_port' in request.meta:  # почему бы не словили исключение, если использовали DeleGate - выключаем
+            self.stop_delegated(request.meta['delegate_port'])
+
+        if request.meta['tries'] >= 6:  # если мы скрапили на системной проксе, и все равно
+            # ловим исключение, даже попытавшись запроксировать еще пару раз, то все хуева :(
+            spider.closed("Ran out of proxies, system proxy got blocked")
+
+        if isinstance(exception, NoProxiesError):
+            # когда кончаются прокси, можно скрести на системной проксе, пока не найдутся новые - это +50 минут
+            # И угадай что?) Сюда мы попадаем т и тт, когда не можем найти приличных проксей
+            request.meta['proxy'] = ''  # это чтобы не пытаться проксировать лишнего
+            return proxy
 
 
-# ##########CURRENT##########CURRENT##########CURRENT#################################
 class FortyGrandRequestsMiddleware:
     def __init__(self):  # added connection to db
         self.db = "proxy_db"
