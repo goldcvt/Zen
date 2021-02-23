@@ -43,6 +43,10 @@ class NoProxiesError(BaseException):
     pass
 
 
+class BadProxyException(BaseException):
+    pass
+
+
 class ProxyManager:
     @staticmethod
     def get_proxy(proto='http', bad_checks=0):
@@ -55,9 +59,14 @@ class ProxyManager:
         else:
             raise NoProxiesError
 
+    @staticmethod
+    def get_fallback_proxy():
+        proxy = Proxy.select().order_by(Proxy.uptime).limit(1).to_url() # TODO add condition about yand block and geo
+        return proxy
 
     @staticmethod
-    def blacklist_proxy(proxy):
+    def blacklist_proxy(proxy_string):
+        proxy = Proxy.select().where()  # TODO finish: should pick all proxies with a banned address
         BannedByYandexProxy.create(_banned_at, _proxy_id=proxy.id, last_check=None)
 
     @staticmethod
