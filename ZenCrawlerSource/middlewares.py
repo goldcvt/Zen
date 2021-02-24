@@ -215,7 +215,10 @@ class LatestDownloaderMiddleware:
             # we basically don't need to do a single thing if there's a good-ass http-proxy
             request.meta['proxy'] = proxy
 
-    def process_request(self, request, spider):  # TODO finish
+        if proxy.location['country_code'] == 'RU':
+            pass  # TODO set request headers to accept ONLY english language
+
+    def process_request(self, request, spider):
         if request.dont_filter:
             request.dont_filter = False
         if 'tries' not in request.meta:
@@ -225,15 +228,13 @@ class LatestDownloaderMiddleware:
 
         if 'proxy' not in request.meta:
             self.proxify(request)
+            return
 
-        # сюда попадаем только когда кончились прокси и мы временно на системном
-        if 'using_system_proxy' in request.meta:
-            if request.meta['using_system_proxy'] > request.meta['tries'] + 1:  # сюда - если засиделись
-                self.proxify(request)
-            else:
-                request.meta['proxy'] = None
+        # сюда попадаем только когда кончились прокси и мы временно на системном, но засиделись
+        if request.meta['tries'] == 6:
+            self.proxify(request)
 
-        return None
+        return
 
     def process_response(self, request, response, spider):
         if 'delegate_port' in request.meta:
@@ -241,13 +242,14 @@ class LatestDownloaderMiddleware:
 
         if response.status == 200:
             return response
-        elif response.status in [407, 409, 500, 501, 502, 503, 508]:
-            spider.logger.warning(f"Got a code {response.status} response, declaring proxy dead")
-            raise BadProxyException
-        elif response.status in [301, 302, 307, 303, 304]:
+        elif response.status in [301, 302, 307, 303, 304, 309]:
             spider.logger.warning(f"Got REDIRECT {response.status}, giving up")
         elif response.status == 404:
             spider.logger.warning("Got NOT FOUND 404")
+        # elif response.status in [407, 409, 500, 501, 502, 503, 508]:
+        else:
+            spider.logger.warning(f"Got a code {response.status} response, declaring proxy dead")
+            raise BadProxyException
 
     def process_exception(self, request, exception, spider):  # TODO test
         spider.logger.warning(exception)
@@ -259,22 +261,29 @@ class LatestDownloaderMiddleware:
             # ловим исключение, даже попытавшись запроксировать еще пару раз, то все хуева :(
             spider.closed("Ran out of proxies, system proxy got blocked")
 
-        if not request.meta['proxy'] and request.meta['tries'] >= 5:  # если системный прокси прокис, а попыток дохуя
+        if not request.meta['proxy'] and request.meta['tries'] >= 3:  # если системный прокси прокис, а попыток дохуя
             request.meta['proxy'] = self.proxy_manager.get_fallback_proxy()
             request.dont_filter = True
             return request
 
         if isinstance(exception, NoProxiesError):
+            # если пытались проксировать, обоссались, а системная мертва
+            if 'using_system_proxy_since' in request.meta and request.meta['tries'] >= 5:
+                request.meta['proxy'] = self.proxy_manager.get_fallback_proxy()
+                request.dont_filter = True
+                return request
             # когда кончаются прокси, можно скрести на системной проксе, пока не найдутся новые - это +50 минут
             # И угадай что?) Сюда мы попадаем т и тт, когда не можем найти приличных проксей
-            request.meta['proxy'] = ''  # это чтобы не пытаться проксировать лишнего
-            request.meta['using_sys_proxy_since'] = request.meta['tries']
+            request.meta['proxy'] = None  # это чтобы не пытаться проксировать лишнего
+            request.meta['using_system_proxy_since'] = request.meta['tries']
             request.dont_filter = True
             return request
         else:
-            # если мы дошли до сюда, то прокся неликвидна
-            self.proxy_manager.blacklist_proxy(request.meta['proxy'])
-            del request.meta['proxy']
+            spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['meta']}th time" )
+            if request.meta['proxy']:  # если мы дошли до сюда, то прокся неликвидна (если не на системной)
+                request.meta['tries'] -= 1
+                self.proxy_manager.blacklist_proxy(request.meta['proxy'])
+                del request.meta['proxy']
             request.dont_filter = True
             return request
 
