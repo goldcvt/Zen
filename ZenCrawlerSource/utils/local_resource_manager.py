@@ -48,11 +48,31 @@ class BadProxyException(BaseException):
 
 
 class ProxyManager:
+    '''
+    SELECT * FROM proxies
+    LEFT JOIN banned_by_yandex AS banned
+        ON banned._proxy_id = proxies.id
+    WHERE banned._proxy_id IS NULL
+    '''
+
     @staticmethod
     def get_proxy(proto='http', bad_checks=0):
-        proxy = Proxy.select().where(Proxy.protocol == proto, Proxy.number_of_bad_checks == bad_checks).order_by(
-            Proxy.last_check_time.desc()).limit(1)  # TODO add condition for proxy being banned by yandex
-        # TODO add condition blocking RU proxy (or ability to choose proxy geo)
+        banned = BannedByYandexProxy.alias()
+        predicate = (banned.proxy_id == Proxy.id)
+        proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
+            banned.proxy_id >> None,
+            Proxy.protocol == proto,
+            Proxy.number_of_bad_checks == bad_checks
+        ).order_by(
+            Proxy.last_check_time.desc()
+        ).limit(1)
+        while proxy.location['country_code'] == 'RU':  # TODO delete whole cycle after you add support for RU proxies
+            proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
+                banned.proxy_id >> None,
+                Proxy.protocol == proto,
+                Proxy.number_of_bad_checks == bad_checks
+            ).order_by(
+                fn.Random()).limit(1)
         if proxy:
             proxy = proxy.to_url(protocol=proto)
             return proxy
@@ -61,22 +81,24 @@ class ProxyManager:
 
     @staticmethod
     def get_fallback_proxy():
-        proxy = Proxy.select().order_by(Proxy.uptime).limit(1).to_url() # TODO add condition about yand block and geo
+        banned = BannedByYandexProxy.alias()
+        predicate = (banned.proxy_id == Proxy.id)
+        proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
+            banned.proxy_id >> None
+        ).order_by(Proxy.uptime).limit(1).to_url()
+        while proxy.location['country_code'] == 'RU':  # TODO delete whole cycle after you add support for RU proxies
+            proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
+                banned.proxy_id >> None
+            ).order_by(fn.Random()).limit(1).to_url()
         return proxy
 
     @staticmethod
     def blacklist_proxy(proxy_string):
-        proxy = Proxy.select().where()  # TODO finish: should pick all proxies with a banned address
-        BannedByYandexProxy.create(_banned_at, _proxy_id=proxy.id, last_check=None)
+        proxy_string = proxy_string.split("/")[-1]
+        proxies = Proxy.select().where(Proxy.address == proxy_string)
+        for proxy in proxies:
+            BannedByYandexProxy.create(banned_at, proxy_id=proxy.id, last_check=None)
 
     @staticmethod
     def free_from_blacklist(proxy):
         proxy.delete_instance()
-
-
-if __name__ == "__main__":
-    port_manager = DeleGatePortManager()
-    port_manager.reserve_port(13)
-    print(port_manager.used_ports)
-    port_manager.release_port(13)
-    print(port_manager.used_ports)
