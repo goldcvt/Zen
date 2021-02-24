@@ -259,7 +259,7 @@ class LatestDownloaderMiddleware:
 
         if request.meta['tries'] >= 6:  # если мы скрапили на системной проксе, и все равно
             # ловим исключение, даже попытавшись запроксировать еще пару раз, то все хуева :(
-            spider.closed("Ran out of proxies, system proxy got blocked")
+            spider.closed("Ran out of proxies, system proxy got blocked, latest proxy used: " + request.meta['proxy'])
 
         if not request.meta['proxy'] and request.meta['tries'] >= 4:  # если системный прокси прокис, а попыток дохуя
             request.meta['proxy'] = self.proxy_manager.get_fallback_proxy()
