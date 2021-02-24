@@ -261,21 +261,15 @@ class LatestDownloaderMiddleware:
             # ловим исключение, даже попытавшись запроксировать еще пару раз, то все хуева :(
             spider.closed("Ran out of proxies, system proxy got blocked")
 
-        if not request.meta['proxy'] and request.meta['tries'] >= 3:  # если системный прокси прокис, а попыток дохуя
+        if not request.meta['proxy'] and request.meta['tries'] >= 4:  # если системный прокси прокис, а попыток дохуя
             request.meta['proxy'] = self.proxy_manager.get_fallback_proxy()
             request.dont_filter = True
             return request
 
         if isinstance(exception, NoProxiesError):
-            # если пытались проксировать, обоссались, а системная мертва
-            if 'using_system_proxy_since' in request.meta and request.meta['tries'] >= 5:
-                request.meta['proxy'] = self.proxy_manager.get_fallback_proxy()
-                request.dont_filter = True
-                return request
             # когда кончаются прокси, можно скрести на системной проксе, пока не найдутся новые - это +50 минут
             # И угадай что?) Сюда мы попадаем т и тт, когда не можем найти приличных проксей
             request.meta['proxy'] = None  # это чтобы не пытаться проксировать лишнего
-            request.meta['using_system_proxy_since'] = request.meta['tries']
             request.dont_filter = True
             return request
         else:
