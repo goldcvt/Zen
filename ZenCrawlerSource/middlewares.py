@@ -216,11 +216,15 @@ class LatestDownloaderMiddleware:
             request.meta['proxy'] = proxy
 
         if proxy.location['country_code'] == 'RU':
-            pass  # TODO set request headers to accept ONLY english language
+            request.headers['Accept-Language'] = 'en-US,en;q=0.9'
 
     def process_request(self, request, spider):
+        if request.headers['Accept-Language'] == 'en-US,en;q=0.9':
+            request.headers['Accept-Language'] = 'ru-RU,ru;q=0.9'
+
         if request.dont_filter:
             request.dont_filter = False
+
         if 'tries' not in request.meta:
             request.meta['tries'] = 1
         else:

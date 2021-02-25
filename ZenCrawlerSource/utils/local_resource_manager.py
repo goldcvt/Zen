@@ -66,13 +66,7 @@ class ProxyManager:
         ).order_by(
             Proxy.last_check_time.desc()
         ).limit(1)
-        while proxy.location['country_code'] == 'RU':  # TODO delete whole cycle after you add support for RU proxies
-            proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
-                banned.proxy_id >> None,
-                Proxy.protocol == proto,
-                Proxy.number_of_bad_checks == bad_checks
-            ).order_by(
-                fn.Random()).limit(1)
+
         if proxy:
             proxy = proxy.to_url(protocol=proto)
             return proxy
