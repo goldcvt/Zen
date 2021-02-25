@@ -259,17 +259,18 @@ class ExampleSpider(scrapy.Spider):
         my_item = self.itemize_channel(chan)
         yield my_item
 
-        if urls:
-            if urls[0].find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
-                yield response.follow(urls[0],
-                                      callback=self.fetch_article,
-                                      cb_kwargs=dict(other_pubs=urls[1:])
+        if chan.audience < 10000:  # TODO adjust this condition if there will be not that many channels
+            if urls:
+                if urls[0].find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
+                    yield response.follow(urls[0],
+                                          callback=self.fetch_article,
+                                          cb_kwargs=dict(other_pubs=urls[1:])
+                                          )
+            if galls:
+                yield response.follow(galls[0],
+                                      callback=self.fetch_gallery,
+                                      cb_kwargs=dict(other_pubs=galls[1:])
                                       )
-        if galls:
-            yield response.follow(galls[0],
-                                  callback=self.fetch_gallery,
-                                  cb_kwargs=dict(other_pubs=galls[1:])
-                                  )
 
     def fetch_gallery(self, response, other_pubs=None):
         base_date = datetime.date(1900, 12, 12)
@@ -295,7 +296,9 @@ class ExampleSpider(scrapy.Spider):
         title = response.css("div#article__page-root h1.article__title::text").get().encode('utf-8').strip()
         if title:
             title = title.decode().replace("'", "")
-        # d_str = response.css("footer.article__statistics span.article-stat__date::text").get() # а теперь вместо спана простой див без класса, без нихуя
+        else:
+            title = ""
+
         base_date = datetime.date(1900, 12, 12)
 
         article = Articles(base_date, base_date, title, response.url)
