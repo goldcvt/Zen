@@ -19,7 +19,7 @@ BOT_NAME = 'ZenCrawlerSource'
 
 SPIDER_MODULES = ['ZenCrawlerSource.spiders']
 NEWSPIDER_MODULE = 'ZenCrawlerSource.spiders'
-GEOLITE2_CITY_FILE_LOCATION = ''
+GEOLITE2_CITY_FILE_LOCATION = '/home/ubuntu/GeoLite2-City_20210223/GeoLite2-City.mmdb'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'ZenCrawlerSource (+http://www.yourdomain.com)'

@@ -3,8 +3,8 @@ Scrapy~=2.4.0
 tqdm~=4.50.2
 itemadapter~=0.1.1
 Twisted~=20.3.0
-requests~=2.25.1
 dateparser~=1.0.0
 bs4~=0.0.1
 beautifulsoup4~=4.9.3
 crawler_toolz
+scrapy-user-agent
