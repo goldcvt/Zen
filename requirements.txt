@@ -7,4 +7,4 @@ dateparser~=1.0.0
 bs4~=0.0.1
 beautifulsoup4~=4.9.3
 crawler_toolz
-scrapy-user-agent
+scrapy-user-agents
