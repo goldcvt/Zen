@@ -3,8 +3,9 @@ from datetime import datetime
 from ZenCrawlerSource import settings
 import geoip2.database
 import os.path
+from playhouse.postgres_ext import PooledPostgresqlDatabase
 
-raw_db = peewee.PooledPostgresqlDatabase(
+raw_db = PooledPostgresqlDatabase(
     *settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS,
 )
 
