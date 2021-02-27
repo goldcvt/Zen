@@ -5,7 +5,7 @@ import geoip2.database
 import os.path
 from playhouse.postgres_ext import PooledPostgresqlDatabase
 
-raw_db = PooledPostgresqlDatabase(
+raw_db = PostgresqlDatabase(
     *settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS,
 )
 
