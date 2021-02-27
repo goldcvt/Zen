@@ -3,7 +3,7 @@ from datetime import datetime
 from ZenCrawlerSource import settings
 import geoip2.database
 import os.path
-from playhouse.postgres_ext import PooledPostgresqlDatabase
+from playhouse.postgres_ext import PostgresqlDatabase
 
 raw_db = PostgresqlDatabase(
     *settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS,
