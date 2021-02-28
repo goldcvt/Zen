@@ -69,7 +69,7 @@ class ProxyManager:
         banned = BannedByYandexProxy.alias()
         predicate = (banned._proxy_id == Proxy.id)
         proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
-            banned._proxy_id >> None,
+            banned._proxy_id.is_null(True),
             Proxy.raw_protocol == proto_num,
             Proxy.number_of_bad_checks == bad_checks
         ).order_by(
