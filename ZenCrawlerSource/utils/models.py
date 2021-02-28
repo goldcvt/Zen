@@ -1,5 +1,4 @@
 import peewee
-from datetime import datetime
 from ZenCrawlerSource import settings
 import geoip2.database
 import os.path
@@ -18,7 +17,7 @@ def init_location_db_reader():
         location_database_reader = geoip2.database.Reader(settings.GEOLITE2_CITY_FILE_LOCATION)
     else:
         # DB doesn`t exists
-        log.warning(
+        print(
             "Public IP Database is not found. See GEOLITE2_CITY_FILE_LOCATION in settings.py"
         )
 
@@ -141,9 +140,10 @@ class BannedByYandexProxy(peewee.Model):
     class Meta:
         database = raw_db
         db_table = "banned_by_yandex"
+        primary_key = False
 
-    _proxy_id = peewee.ForeignKeyField(Proxy, backref="bannedbyyandex")
-    _banned_at = peewee.DateTimeField(default=datetime.now(), null=True)
+    _proxy_id = peewee.ForeignKeyField(Proxy, backref="yandex-banned-proxies")
+    _banned_at = peewee.DateTimeField(null=True)
     last_check = peewee.DateTimeField(null=True)
 
     @property
