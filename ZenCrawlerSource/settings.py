@@ -8,7 +8,7 @@
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 DATABASE_CONNECTION_ARGS = ()
 DATABASE_CONNECTION_KWARGS = {
-    'host': '10.0.0.12:5432',
+    'host': '10.0.0.12',
     'database': 'proxy_py',
     'user': 'proxy_py',
     'password': 'proxy_py',
