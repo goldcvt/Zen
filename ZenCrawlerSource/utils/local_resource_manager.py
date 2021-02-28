@@ -59,7 +59,7 @@ class ProxyManager:
     def get_proxy(proto='http', bad_checks=0):
         banned = BannedByYandexProxy.alias()
         predicate = (banned._proxy_id == Proxy.id)
-        proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
+        proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
             banned._proxy_id.is_null(True),
             Proxy.protocol == proto,
             Proxy.number_of_bad_checks == bad_checks
@@ -77,11 +77,11 @@ class ProxyManager:
     def get_fallback_proxy():
         banned = BannedByYandexProxy.alias()
         predicate = (banned._proxy_id == Proxy.id)
-        proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
+        proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
             banned._proxy_id.is_null(True)
         ).order_by(Proxy.uptime).limit(1).to_url()
         while proxy.location['country_code'] == 'RU':  # TODO delete whole cycle after you add support for RU proxies
-            proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
+            proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
                 banned._proxy_id.is_null(True)
             ).order_by(fn.Random()).limit(1).to_url()
         return proxy
