@@ -215,7 +215,7 @@ class LatestDownloaderMiddleware:
         if proxy.find('socks') == -1:
             request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(request.meta['proxy'])
             # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
-            request.meta['proxy'] = 'localhost' + request.meta['delegate_port']
+            request.meta['proxy'] = '0.0.0.0:' + request.meta['delegate_port']
         else:
             # we basically don't need to do a single thing if there's a good-ass http-proxy
             request.meta['proxy'] = proxy
