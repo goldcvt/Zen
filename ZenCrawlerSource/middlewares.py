@@ -196,7 +196,7 @@ class LatestDownloaderMiddleware:
         else:
             cmd = 'delegated ADMIN=nobody -P:%s SERVER=http TIMEOUT=con:15 SOCKS=%s' % (str(port), proxy)
         subprocess.Popen(cmd, shell=False)
-        return str(port)
+        return str(port), proxy
 
     def stop_delegated(self, port):
         cmd = 'delegated -P:%s -Fkill' % str(port)
@@ -213,7 +213,7 @@ class LatestDownloaderMiddleware:
                 proxy = self.proxy_manager.get_proxy(proto='socks5', bad_checks=0)
         # say, we managed to get some good proxies (not fallback)
         if proxy.find('socks') == -1:
-            request.meta['delegate_port'] = self.start_delegated(request.meta['proxy'])
+            request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(request.meta['proxy'])
             # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
             request.meta['proxy'] = 'localhost' + request.meta['delegate_port']
         else:
@@ -273,7 +273,18 @@ class LatestDownloaderMiddleware:
             spider.closed("Ran out of proxies, system proxy got blocked, latest proxy used: " + request.meta['proxy'])
 
         if not request.meta['proxy'] and request.meta['tries'] >= 4:  # если системный прокси прокис, а попыток дохуя
-            request.meta['proxy'] = self.proxy_manager.get_fallback_proxy()
+            proxy = self.proxy_manager.get_fallback_proxy()
+
+            if proxy.find('socks') == -1:
+                request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(
+                    request.meta['proxy']
+                )
+                # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
+                request.meta['proxy'] = 'localhost' + request.meta['delegate_port']
+            else:
+                # we basically don't need to do a single thing if there's a good-ass http-proxy
+                request.meta['proxy'] = proxy
+
             request.dont_filter = True
             return request
 
@@ -287,7 +298,10 @@ class LatestDownloaderMiddleware:
             spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['meta']}th time" )
             if request.meta['proxy']:  # если мы дошли до сюда, то прокся неликвидна (если не на системной)
                 request.meta['tries'] -= 1
-                self.proxy_manager.blacklist_proxy(request.meta['proxy'])
+                if 'proxy_origin' in request.meta:
+                    self.proxy_manager.blacklist_proxy(request.meta['proxy_origin'])
+                else:
+                    self.proxy_manager.blacklist_proxy(request.meta['proxy'])
                 del request.meta['proxy']
             request.dont_filter = True
             return request
