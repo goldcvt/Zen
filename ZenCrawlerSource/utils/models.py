@@ -143,7 +143,7 @@ class BannedByYandexProxy(peewee.Model):
         db_table = "banned_by_yandex"
 
     _proxy_id = peewee.ForeignKeyField(Proxy, backref="bannedbyyandex")
-    _banned_at = peewee.DateTimeField(default=datetime.datetime.now(), null=True)
+    _banned_at = peewee.DateTimeField(default=datetime.now(), null=True)
     last_check = peewee.DateTimeField(null=True)
 
     @property
