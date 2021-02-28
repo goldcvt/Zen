@@ -4,6 +4,7 @@ from datetime import datetime
 import socket
 from peewee import JOIN
 
+
 class DeleGatePortManager:
 
     '''
@@ -57,16 +58,23 @@ class ProxyManager:
 
     @staticmethod
     def get_proxy(proto='http', bad_checks=0):
+
+        if proto == 'http':
+            proto_num = 0
+        elif proto == 'socks4':
+            proto_num = 1
+        else:
+            proto_num = 2
+
         banned = BannedByYandexProxy.alias()
         predicate = (banned._proxy_id == Proxy.id)
         proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
-            banned._proxy_id.is_null(True),
-            Proxy.protocol == proto,
+            banned._proxy_id >> None,
+            Proxy.raw_protocol == proto_num,
             Proxy.number_of_bad_checks == bad_checks
         ).order_by(
             Proxy.last_check_time.desc()
-        ).limit(1)
-        print(proxy)
+        ).limit(1).get()
         if proxy:
             proxy = proxy.to_url(protocol=proto)
             return proxy
@@ -79,20 +87,23 @@ class ProxyManager:
         predicate = (banned._proxy_id == Proxy.id)
         proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
             banned._proxy_id.is_null(True)
-        ).order_by(Proxy.uptime).limit(1).to_url()
+        ).order_by(Proxy.uptime).limit(1).get().to_url()
         while proxy.location['country_code'] == 'RU':  # TODO delete whole cycle after you add support for RU proxies
             proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
                 banned._proxy_id.is_null(True)
-            ).order_by(fn.Random()).limit(1).to_url()
+            ).order_by(fn.Random()).limit(1).get().to_url()
         return proxy
 
     @staticmethod
     def blacklist_proxy(proxy_string):
-        proxy_string = proxy_string.split("/")[-1]
-        proxies = Proxy.select().where(Proxy.address == proxy_string)
+        proxy_string = proxy_string.split("/")[-1].split(":")[0]
+        print(proxy_string)
+        proxies = Proxy.select().where(Proxy.domain == proxy_string)
         for proxy in proxies:
-            BannedByYandexProxy.create(_banned_at, _proxy_id=proxy.id, last_check=None)
+            BannedByYandexProxy.insert(_banned_at=datetime.now(), _proxy_id=proxy.id, last_check=None).execute()
 
+    # WARNING: THIS ONE DOES NOT OPERATE
     @staticmethod
     def free_from_blacklist(proxy):
+        # TODO MAKE IT WORK!
         proxy.delete_instance()
