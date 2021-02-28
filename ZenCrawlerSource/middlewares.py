@@ -231,6 +231,7 @@ class LatestDownloaderMiddleware:
             request.dont_filter = False
 
         if 'tries' not in request.meta:
+            spider.logger("No such thing as 'tries'")
             request.meta['tries'] = 1
         else:
             request.meta['tries'] += 1
