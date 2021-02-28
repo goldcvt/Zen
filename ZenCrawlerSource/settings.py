@@ -12,7 +12,6 @@ DATABASE_CONNECTION_KWARGS = {
     'database': 'proxy_py',
     'user': 'proxy_py',
     'password': 'proxy_py',
-    'max_connections': 20,
 }
 DB_MAX_DOMAIN_LENGTH = 128
 DB_AUTH_DATA_MAX_LENGTH = 64
