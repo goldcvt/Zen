@@ -205,12 +205,12 @@ class LatestDownloaderMiddleware:
 
     def proxify(self, request):
         try:
-            proxy = self.proxy_manager.get_proxy(proto='http', bad_checks=0)
+            proxy, loc = self.proxy_manager.get_proxy(proto='http', bad_checks=0)
         except NoProxiesError:
             try:
-                proxy = self.proxy_manager.get_proxy(proto='socks4', bad_checks=0)
+                proxy, loc = self.proxy_manager.get_proxy(proto='socks4', bad_checks=0)
             except NoProxiesError:
-                proxy = self.proxy_manager.get_proxy(proto='socks5', bad_checks=0)
+                proxy, loc = self.proxy_manager.get_proxy(proto='socks5', bad_checks=0)
         # say, we managed to get some good proxies (not fallback)
         if proxy.find('socks') == -1:
             request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(request.meta['proxy'])
@@ -220,7 +220,7 @@ class LatestDownloaderMiddleware:
             # we basically don't need to do a single thing if there's a good-ass http-proxy
             request.meta['proxy'] = proxy
 
-        if proxy.location['country_code'] == 'RU':
+        if loc == 'RU':
             request.headers['Accept-Language'] = 'en-US,en;q=0.9'
 
     def process_request(self, request, spider):
@@ -280,7 +280,7 @@ class LatestDownloaderMiddleware:
                     request.meta['proxy']
                 )
                 # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
-                request.meta['proxy'] = 'localhost' + request.meta['delegate_port']
+                request.meta['proxy'] = '0.0.0.0:' + request.meta['delegate_port']
             else:
                 # we basically don't need to do a single thing if there's a good-ass http-proxy
                 request.meta['proxy'] = proxy

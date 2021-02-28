@@ -76,8 +76,7 @@ class ProxyManager:
             Proxy.last_check_time.desc()
         ).limit(1).get()
         if proxy:
-            proxy = proxy.to_url(protocol=proto)
-            return proxy
+            return proxy.to_url(protocol=proto), proxy.location
         else:
             raise NoProxiesError
 
@@ -87,12 +86,12 @@ class ProxyManager:
         predicate = (banned._proxy_id == Proxy.id)
         proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
             banned._proxy_id.is_null(True)
-        ).order_by(Proxy.uptime).limit(1).get().to_url()
+        ).order_by(Proxy.uptime).limit(1).get()
         while proxy.location['country_code'] == 'RU':  # TODO delete whole cycle after you add support for RU proxies
             proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
                 banned._proxy_id.is_null(True)
-            ).order_by(fn.Random()).limit(1).get().to_url()
-        return proxy
+            ).order_by(fn.Random()).limit(1).get()
+        return proxy.to_url()
 
     @staticmethod
     def blacklist_proxy(proxy_string):
