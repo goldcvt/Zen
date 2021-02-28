@@ -76,6 +76,7 @@ class ProxyManager:
             Proxy.last_check_time.desc()
         ).limit(1).get()
         print(proxy)
+        print(proxy.location)
         if proxy:
             return proxy.to_url(protocol=proto), proxy.location
         else:
