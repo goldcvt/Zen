@@ -205,12 +205,12 @@ class LatestDownloaderMiddleware:
 
     def proxify(self, request):
         try:
-            proxy = self.proxy_manager.get_proxy(proto='http')
+            proxy = self.proxy_manager.get_proxy(proto='http', bad_checks=0)
         except NoProxiesError:
             try:
-                proxy = self.proxy_manager.get_proxy(proto='socks4')
+                proxy = self.proxy_manager.get_proxy(proto='socks4', bad_checks=0)
             except NoProxiesError:
-                proxy = self.proxy_manager.get_proxy(proto='socks5')
+                proxy = self.proxy_manager.get_proxy(proto='socks5', bad_checks=0)
         # say, we managed to get some good proxies (not fallback)
         if proxy.find('socks') == -1:
             request.meta['delegate_port'] = self.start_delegated(request.meta['proxy'])
@@ -236,6 +236,7 @@ class LatestDownloaderMiddleware:
             request.meta['tries'] += 1
 
         if 'proxy' not in request.meta:
+            spider.logger.warn("Trying to proxify")
             self.proxify(request)
             return
 

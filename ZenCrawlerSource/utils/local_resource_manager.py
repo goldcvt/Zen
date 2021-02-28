@@ -66,7 +66,7 @@ class ProxyManager:
         ).order_by(
             Proxy.last_check_time.desc()
         ).limit(1)
-
+        print(proxy)
         if proxy:
             proxy = proxy.to_url(protocol=proto)
             return proxy
