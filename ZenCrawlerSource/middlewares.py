@@ -224,9 +224,8 @@ class LatestDownloaderMiddleware:
             request.headers['Accept-Language'] = 'en-US,en;q=0.9'
 
     def process_request(self, request, spider):
-        if 'Accept-Language' in request.headers:
-            if request.headers['Accept-Language'] == 'en-US,en;q=0.9':
-                request.headers['Accept-Language'] = 'ru-RU,ru;q=0.9'
+        if request.headers.get('Accept-Language') == 'en-US,en;q=0.9':
+            request.headers['Accept-Language'] = 'ru-RU,ru;q=0.9'
 
         if request.dont_filter:
             request.dont_filter = False
