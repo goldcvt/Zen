@@ -219,7 +219,8 @@ class LatestDownloaderMiddleware:
         else:
             # we basically don't need to do a single thing if there's a good-ass http-proxy
             request.meta['proxy'] = proxy
-
+        print("got proxies")
+        print(request.meta['proxy'])
         if loc == 'RU':
             request.headers['Accept-Language'] = 'en-US,en;q=0.9'
 
