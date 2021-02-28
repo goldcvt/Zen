@@ -181,6 +181,9 @@ class LatestDownloaderMiddleware:
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
+    def open_spider(self, spider): # isn't being called upon spider's opening))
+        spider.logger.warning(f"Starting...")
+
     def __init__(self):
         self.proxy_manager = ProxyManager()
         self.port_manager = DeleGatePortManager()
