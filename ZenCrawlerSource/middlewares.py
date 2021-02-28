@@ -231,7 +231,6 @@ class LatestDownloaderMiddleware:
             request.dont_filter = False
 
         if 'tries' not in request.meta:
-            spider.logger("No such thing as 'tries'")
             request.meta['tries'] = 1
         else:
             request.meta['tries'] += 1
@@ -262,6 +261,7 @@ class LatestDownloaderMiddleware:
             raise BadProxyException
 
     def process_exception(self, request, exception, spider):  # TODO test
+        spider.logger.warning("PROCESSING EXCEPTION")
         spider.logger.warning(exception)
 
         if 'delegate_port' in request.meta:  # почему бы не словили исключение, если использовали DeleGate - выключаем
