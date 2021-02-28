@@ -7,7 +7,6 @@ from scrapy import signals
 from scrapy.utils.response import get_meta_refresh
 from psycopg2 import InterfaceError
 from ZenCrawlerSource.utils.local_resource_manager import DeleGatePortManager, ProxyManager, NoProxiesError, BadProxyException
-from proxy_checker import check_in_db
 from twisted.internet.error import ConnectionLost
 from twisted.web.http import _DataLoss
 from twisted.web._newclient import RequestNotSent, ResponseFailed, ResponseNeverReceived
@@ -136,42 +135,42 @@ class ZencrawlersourceDownloaderMiddlewareArchive:
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't need retries due to redirect so...
-    @classmethod
-    def from_crawler(cls, crawler):
-        # This method is used by Scrapy to create your spiders.
-        s = cls(crawler.settings)
-        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
-        return s
-
-    def process_request(self, request, spider):
-        if not request.meta['proxy']:
-            request.meta['proxy'] = 'http://228.228.228.228:1488'
-        return None
-
-    def process_response(self, request, response, spider): # only if we need redirectual retries
-        url = response.url
-        if response.status in [301, 302, 307]:
-            spider.logger.warning(f"We're being redirected with server-side redir {url}")
-            reason = 'redirect %d' % response.status
-            return self._retry(request, reason, spider) or response
-        interval, redirect_url = get_meta_refresh(response)
-        # handle meta redirect
-        if redirect_url:
-            spider.logger.warning(f"We're being redirected with META redir {url}")
-            reason = 'meta'
-            return self._retry(request, reason, spider) or response
-        return response
-
-    def process_exception(self, request, exception, spider): # will always pop if no retry middleware is enabled
-        fine_proxy = 'http://159.203.61.169:8080'
-        request.meta['proxy'] = fine_proxy
-        print(f"Connected to {fine_proxy}")
-        # allows infinite loops. but still, does the thing we desired
-        return request
-
-    def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
+# class IPTestDownloaderMiddleware(RetryMiddleware): # i mean, we probably don't need retries due to redirect so...
+#     @classmethod
+#     def from_crawler(cls, crawler):
+#         # This method is used by Scrapy to create your spiders.
+#         s = cls(crawler.settings)
+#         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+#         return s
+#
+#     def process_request(self, request, spider):
+#         if not request.meta['proxy']:
+#             request.meta['proxy'] = 'http://228.228.228.228:1488'
+#         return None
+#
+#     def process_response(self, request, response, spider): # only if we need redirectual retries
+#         url = response.url
+#         if response.status in [301, 302, 307]:
+#             spider.logger.warning(f"We're being redirected with server-side redir {url}")
+#             reason = 'redirect %d' % response.status
+#             return self._retry(request, reason, spider) or response
+#         interval, redirect_url = get_meta_refresh(response)
+#         # handle meta redirect
+#         if redirect_url:
+#             spider.logger.warning(f"We're being redirected with META redir {url}")
+#             reason = 'meta'
+#             return self._retry(request, reason, spider) or response
+#         return response
+#
+#     def process_exception(self, request, exception, spider): # will always pop if no retry middleware is enabled
+#         fine_proxy = 'http://159.203.61.169:8080'
+#         request.meta['proxy'] = fine_proxy
+#         print(f"Connected to {fine_proxy}")
+#         # allows infinite loops. but still, does the thing we desired
+#         return request
+#
+#     def spider_opened(self, spider):
+#         spider.logger.info('Spider opened: %s' % spider.name)
 
 
 class LatestDownloaderMiddleware:
@@ -289,134 +288,134 @@ class LatestDownloaderMiddleware:
             return request
 
 
-class FortyGrandRequestsMiddleware:
-    def __init__(self):  # added connection to db
-        self.db = "proxy_db"
-        self.usr = "postgres"
-        self.pswd = "postgres"
-        self.hst = "127.0.0.1"
-        self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-        self.current_proxy = self.proxify()
-
-    def ban_proxy(self, request):
-        adr_port = request.meta['proxy'].split("/")[-1]
-        curs = self.conn().cursor
-        req = f"UPDATE proxies SET banned_by_yandex=True WHERE address='{adr_port}';"
-        curs.execute(req)
-        curs.close()
-
-    def proxify(self):
-        req = "SELECT id,address,type FROM proxies WHERE banned_by_yandex = False ORDER BY response_time DESC LIMIT 1;"
-        curs = self.conn.cursor()
-        curs.execute(req)
-        self.conn.commit()
-        p_els = curs.fetchone()
-        curs.close()
-        if p_els:
-            return p_els[3] + "://" + p_els[1]
-        else:
-            return ''
-
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        # This method is used by Scrapy to create your spiders.
-        s = cls()  # also calls __init__
-        crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
-        crawler.signals.connect(s.close_spider, signal=signals.spider_closed)
-        return s
-
-    def open_spider(self, spider):  # isn't being called upon spider's opening))
-        spider.logger.warning(f"self.conn established: {self.conn}")
-
-    def close_spider(self, spider, reason=''):
-        self.conn.close()  # можно сигналом закрывать соединение
-        spider.logger.warning(f"self.conn closed")
-
-    def process_request(self, request, spider):
-        if request.dont_filter:
-            request.dont_filter = False
-        spider.logger.warning("Processing: " +request.url)
-        if 'proxy' not in request.meta:
-            request.meta['proxy'] = self.current_proxy
-            spider.logger.warning(f"Current proxy: {self.current_proxy}")
-        elif request.meta['proxy'] != self.current_proxy:
-            request.meta['proxy'] = self.current_proxy
-            spider.logger.warning(f"Current proxy: {self.current_proxy}")
-        elif request.meta['proxy'] == '':
-            self.current_proxy = self.proxify()
-            request.meta = self.current_proxy
-        return None
-
-    def process_response(self, request, response, spider):
-        spider.logger.warning(f"Response status is {response.status}")
-        if response.url.find("zen.yandex.ru/") != -1 and response.url.find("zen.yandex.ru/media") == -1:
-            global chans_processed
-            chans_processed += 1
-            spider.logger.warning("Processed %i channel(s) out of 400.000, that's about %F percent done"
-                                  % (chans_processed, chans_processed / 4000))  # console log
-        if response.status == 200:
-            return response
-
-        elif response.status not in [404] + [i for i in range(300, 310, 1)]:
-            if 'proxy' in request.meta:
-                if request.meta['proxy'] != '':
-                    self.ban_proxy(request)
-                self.current_proxy = self.proxify()
-                request.meta['proxy'] = self.current_proxy
-                request.dont_filter = True
-                return request
-            else:
-                self.current_proxy = self.proxify()
-                request.meta['proxy'] = self.current_proxy
-                request.dont_filter = True
-                return request
-
-        # elif response.status in [i for i in range(300, 310, 1)]:
-        #     if response.url !=
-
-        elif response.status == 404: # вообще-то, подозрительно) TODO если их будет оч много, научимся обходить)
-            return None  # or shall we return response...
-
-        else: # на всякий случай))))))
-            raise Exception
-
-    # TODO доделать тут
-    def process_exception(self, request, exception, spider):
-        try:
-            spider.logger.warning(exception + " happened, so we re-checking proxies, crawling halted")
-            if request.meta['proxy'] != '' or exception in [RequestNotSent, ResponseFailed, ResponseNeverReceived]:
-                self.ban_proxy(request)
-                check_in_db(self.conn)
-                self.current_proxy = self.proxify()
-                request.meta['proxy'] = self.current_proxy
-                spider.logger.warning("Successfully found new proxy, keep on with " + self.current_proxy)
-                if self.current_proxy == '':
-                    spider.logger.warning("Ran out of proxies, can't continue")
-                    self.close_spider(spider, "No proxies to crawl with")
-            elif not self.conn:
-                raise AttributeError
-
-        except InterfaceError:
-            spider.logger.warning("Could not connect to db, conn closed, re-establishing")
-            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-            if request.meta['proxy'] != '':
-                self.ban_proxy(request)
-                check_in_db(self.conn)
-                self.current_proxy = self.proxify()
-                request.meta['proxy'] = self.current_proxy
-
-        except AttributeError:   # could lead to more complicated bugs, but it'll do just fine if works
-            spider.logger.warning("Lost connection to proxy_db, re-establishing")
-            self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
-            if request.meta['proxy'] != '':
-                self.ban_proxy(request)
-                check_in_db(self.conn)
-                self.current_proxy = self.proxify()
-                request.meta['proxy'] = self.current_proxy
-
-        request.dont_filter = True
-        return request
+# class FortyGrandRequestsMiddleware:
+#     def __init__(self):  # added connection to db
+#         self.db = "proxy_db"
+#         self.usr = "postgres"
+#         self.pswd = "postgres"
+#         self.hst = "127.0.0.1"
+#         self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+#         self.current_proxy = self.proxify()
+#
+#     def ban_proxy(self, request):
+#         adr_port = request.meta['proxy'].split("/")[-1]
+#         curs = self.conn().cursor
+#         req = f"UPDATE proxies SET banned_by_yandex=True WHERE address='{adr_port}';"
+#         curs.execute(req)
+#         curs.close()
+#
+#     def proxify(self):
+#         req = "SELECT id,address,type FROM proxies WHERE banned_by_yandex = False ORDER BY response_time DESC LIMIT 1;"
+#         curs = self.conn.cursor()
+#         curs.execute(req)
+#         self.conn.commit()
+#         p_els = curs.fetchone()
+#         curs.close()
+#         if p_els:
+#             return p_els[3] + "://" + p_els[1]
+#         else:
+#             return ''
+#
+#
+#     @classmethod
+#     def from_crawler(cls, crawler):
+#         # This method is used by Scrapy to create your spiders.
+#         s = cls()  # also calls __init__
+#         crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
+#         crawler.signals.connect(s.close_spider, signal=signals.spider_closed)
+#         return s
+#
+#     def open_spider(self, spider):  # isn't being called upon spider's opening))
+#         spider.logger.warning(f"self.conn established: {self.conn}")
+#
+#     def close_spider(self, spider, reason=''):
+#         self.conn.close()  # можно сигналом закрывать соединение
+#         spider.logger.warning(f"self.conn closed")
+#
+#     def process_request(self, request, spider):
+#         if request.dont_filter:
+#             request.dont_filter = False
+#         spider.logger.warning("Processing: " +request.url)
+#         if 'proxy' not in request.meta:
+#             request.meta['proxy'] = self.current_proxy
+#             spider.logger.warning(f"Current proxy: {self.current_proxy}")
+#         elif request.meta['proxy'] != self.current_proxy:
+#             request.meta['proxy'] = self.current_proxy
+#             spider.logger.warning(f"Current proxy: {self.current_proxy}")
+#         elif request.meta['proxy'] == '':
+#             self.current_proxy = self.proxify()
+#             request.meta = self.current_proxy
+#         return None
+#
+#     def process_response(self, request, response, spider):
+#         spider.logger.warning(f"Response status is {response.status}")
+#         if response.url.find("zen.yandex.ru/") != -1 and response.url.find("zen.yandex.ru/media") == -1:
+#             global chans_processed
+#             chans_processed += 1
+#             spider.logger.warning("Processed %i channel(s) out of 400.000, that's about %F percent done"
+#                                   % (chans_processed, chans_processed / 4000))  # console log
+#         if response.status == 200:
+#             return response
+#
+#         elif response.status not in [404] + [i for i in range(300, 310, 1)]:
+#             if 'proxy' in request.meta:
+#                 if request.meta['proxy'] != '':
+#                     self.ban_proxy(request)
+#                 self.current_proxy = self.proxify()
+#                 request.meta['proxy'] = self.current_proxy
+#                 request.dont_filter = True
+#                 return request
+#             else:
+#                 self.current_proxy = self.proxify()
+#                 request.meta['proxy'] = self.current_proxy
+#                 request.dont_filter = True
+#                 return request
+#
+#         # elif response.status in [i for i in range(300, 310, 1)]:
+#         #     if response.url !=
+#
+#         elif response.status == 404: # вообще-то, подозрительно) TODO если их будет оч много, научимся обходить)
+#             return None  # or shall we return response...
+#
+#         else: # на всякий случай))))))
+#             raise Exception
+#
+#     # TODO доделать тут
+#     def process_exception(self, request, exception, spider):
+#         try:
+#             spider.logger.warning(exception + " happened, so we re-checking proxies, crawling halted")
+#             if request.meta['proxy'] != '' or exception in [RequestNotSent, ResponseFailed, ResponseNeverReceived]:
+#                 self.ban_proxy(request)
+#                 check_in_db(self.conn)
+#                 self.current_proxy = self.proxify()
+#                 request.meta['proxy'] = self.current_proxy
+#                 spider.logger.warning("Successfully found new proxy, keep on with " + self.current_proxy)
+#                 if self.current_proxy == '':
+#                     spider.logger.warning("Ran out of proxies, can't continue")
+#                     self.close_spider(spider, "No proxies to crawl with")
+#             elif not self.conn:
+#                 raise AttributeError
+#
+#         except InterfaceError:
+#             spider.logger.warning("Could not connect to db, conn closed, re-establishing")
+#             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+#             if request.meta['proxy'] != '':
+#                 self.ban_proxy(request)
+#                 check_in_db(self.conn)
+#                 self.current_proxy = self.proxify()
+#                 request.meta['proxy'] = self.current_proxy
+#
+#         except AttributeError:   # could lead to more complicated bugs, but it'll do just fine if works
+#             spider.logger.warning("Lost connection to proxy_db, re-establishing")
+#             self.conn = db_ops.connect_to_db(self.db, self.usr, self.pswd, self.hst)
+#             if request.meta['proxy'] != '':
+#                 self.ban_proxy(request)
+#                 check_in_db(self.conn)
+#                 self.current_proxy = self.proxify()
+#                 request.meta['proxy'] = self.current_proxy
+#
+#         request.dont_filter = True
+#         return request
 ###############################################################################
 
 
