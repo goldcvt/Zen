@@ -2,7 +2,7 @@ from ZenCrawlerSource.utils.models import Proxy, BannedByYandexProxy, raw_db
 from psycopg2 import connect
 from datetime import datetime
 import socket
-
+from peewee import JOIN
 
 class DeleGatePortManager:
 
