@@ -200,13 +200,6 @@ class LatestDownloaderMiddleware:
         subprocess.Popen(cmd, shell=False)
         self.port_manager.used_ports.remove(port)
 
-    @classmethod
-    def from_crawler(cls, crawler):
-        # This method is used by Scrapy to create your spiders.
-        s = cls(crawler.settings)
-        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
-        return s
-
     def proxify(self, request):
         try:
             proxy = self.proxy_manager.get_proxy(proto='http')
