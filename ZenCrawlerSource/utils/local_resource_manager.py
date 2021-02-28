@@ -76,7 +76,7 @@ class ProxyManager:
             Proxy.last_check_time.desc()
         ).limit(1).get()
         if proxy:
-            return proxy.to_url(protocol=proto), proxy.location.get("country_code")
+            return proxy.to_url(protocol=proto), proxy.location["country_code"]
         else:
             raise NoProxiesError
 
