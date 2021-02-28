@@ -174,6 +174,13 @@ class ZencrawlersourceDownloaderMiddlewareArchive:
 
 
 class LatestDownloaderMiddleware:
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls()
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+
     def __init__(self):
         self.proxy_manager = ProxyManager()
         self.port_manager = DeleGatePortManager()
