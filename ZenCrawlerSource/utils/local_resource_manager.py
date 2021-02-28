@@ -51,16 +51,16 @@ class ProxyManager:
     '''
     SELECT * FROM proxies
     LEFT JOIN banned_by_yandex AS banned
-        ON banned._proxy_id = proxies.id
-    WHERE banned._proxy_id IS NULL
+        ON banned.__proxy_id = proxies.id
+    WHERE banned.__proxy_id IS NULL
     '''
 
     @staticmethod
     def get_proxy(proto='http', bad_checks=0):
         banned = BannedByYandexProxy.alias()
-        predicate = (banned.proxy_id == Proxy.id)
+        predicate = (banned._proxy_id == Proxy.id)
         proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
-            banned.proxy_id.is_null(True),
+            banned._proxy_id.is_null(True),
             Proxy.protocol == proto,
             Proxy.number_of_bad_checks == bad_checks
         ).order_by(
@@ -76,13 +76,13 @@ class ProxyManager:
     @staticmethod
     def get_fallback_proxy():
         banned = BannedByYandexProxy.alias()
-        predicate = (banned.proxy_id == Proxy.id)
+        predicate = (banned._proxy_id == Proxy.id)
         proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
-            banned.proxy_id.is_null(True)
+            banned._proxy_id.is_null(True)
         ).order_by(Proxy.uptime).limit(1).to_url()
         while proxy.location['country_code'] == 'RU':  # TODO delete whole cycle after you add support for RU proxies
             proxy = Proxy.select().join(banned, join_type='JOIN.LEFT_OUTER', on=predicate).where(
-                banned.proxy_id.is_null(True)
+                banned._proxy_id.is_null(True)
             ).order_by(fn.Random()).limit(1).to_url()
         return proxy
 
@@ -91,7 +91,7 @@ class ProxyManager:
         proxy_string = proxy_string.split("/")[-1]
         proxies = Proxy.select().where(Proxy.address == proxy_string)
         for proxy in proxies:
-            BannedByYandexProxy.create(banned_at, proxy_id=proxy.id, last_check=None)
+            BannedByYandexProxy.create(_banned_at, _proxy_id=proxy.id, last_check=None)
 
     @staticmethod
     def free_from_blacklist(proxy):
