@@ -89,6 +89,7 @@ class LatestDownloaderMiddleware:
                    f'SOCKS={address}']
         # subprocess.Popen(cmd, shell=False)
         subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
+        print(f"DELEGATED PARENT PROCESS RUNNING AT PORT {str(port)}")
         return str(port), proxy
 
     def stop_delegated(self, port):
@@ -114,14 +115,14 @@ class LatestDownloaderMiddleware:
         else:
             # we basically don't need to do a single thing if there's a good-ass http-proxy
             request.meta['proxy'] = proxy
-        print("got proxies")
-        print(request.meta['proxy'])
-        if loc == 'RU':
-            request.headers['Accept-Language'] = 'en-US,en;q=0.9'
+        # print("got proxies")
+        # print(request.meta['proxy'])
+        # if loc == 'RU':
+        #     request.headers['Accept-Language'] = 'en-US,en;q=0.9'
 
     def process_request(self, request, spider):
-        if request.headers.get('Accept-Language') == 'en-US,en;q=0.9':
-            request.headers['Accept-Language'] = 'ru-RU,ru;q=0.9'
+        # if request.headers.get('Accept-Language') == 'en-US,en;q=0.9':
+        #     request.headers['Accept-Language'] = 'ru-RU,ru;q=0.9'
 
         if request.dont_filter:
             request.dont_filter = False
