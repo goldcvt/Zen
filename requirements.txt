@@ -10,4 +10,3 @@ crawler_toolz
 scrapy-user-agents
 peewee
 geoip2
-playhouse
