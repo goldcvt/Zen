@@ -201,7 +201,7 @@ class LatestDownloaderMiddleware:
         return str(port), proxy
 
     def stop_delegated(self, port):
-        cmd = ['/usr/bin/delegated', '-P:%s'% str(port), '-Fkill']
+        cmd = ['/usr/bin/delegated', '-P:%s' % str(port), '-Fkill']
         subprocess.Popen(cmd, shell=False)
         self.port_manager.release_port(port)
 
@@ -264,50 +264,50 @@ class LatestDownloaderMiddleware:
             spider.logger.warning(f"Got a code {response.status} response, declaring proxy dead")
             raise BadProxyException
 
-    # def process_exception(self, request, exception, spider):  # TODO test
-    #     spider.logger.warning("PROCESSING EXCEPTION")
-    #     spider.logger.warning(exception)
-    #
-    #     if 'delegate_port' in request.meta:  # почему бы не словили исключение, если использовали DeleGate - выключаем
-    #         self.stop_delegated(request.meta['delegate_port'])
-    #
-    #     if request.meta['tries'] >= 6:  # если мы скрапили на системной проксе, и все равно
-    #         # ловим исключение, даже попытавшись запроксировать еще пару раз, то все хуева :(
-    #         spider.closed("Ran out of proxies, system proxy got blocked, latest proxy used: " + request.meta['proxy'])
-    #
-    #     if not request.meta['proxy'] and request.meta['tries'] >= 4:  # если системный прокси прокис, а попыток дохуя
-    #         proxy = self.proxy_manager.get_fallback_proxy()
-    #
-    #         if proxy.find('socks') == -1:
-    #             request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(
-    #                 request.meta['proxy']
-    #             )
-    #             # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
-    #             request.meta['proxy'] = '0.0.0.0:' + request.meta['delegate_port']
-    #         else:
-    #             # we basically don't need to do a single thing if there's a good-ass http-proxy
-    #             request.meta['proxy'] = proxy
-    #
-    #         request.dont_filter = True
-    #         return request
-    #
-    #     if isinstance(exception, NoProxiesError):
-    #         # когда кончаются прокси, можно скрести на системной проксе, пока не найдутся новые - это +50 минут
-    #         # И угадай что?) Сюда мы попадаем т и тт, когда не можем найти приличных проксей
-    #         request.meta['proxy'] = None  # это чтобы не пытаться проксировать лишнего
-    #         request.dont_filter = True
-    #         return request
-    #     else:
-    #         spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['meta']}th time" )
-    #         if request.meta['proxy']:  # если мы дошли до сюда, то прокся неликвидна (если не на системной)
-    #             request.meta['tries'] -= 1
-    #             if 'proxy_origin' in request.meta:
-    #                 self.proxy_manager.blacklist_proxy(request.meta['proxy_origin'])
-    #             else:
-    #                 self.proxy_manager.blacklist_proxy(request.meta['proxy'])
-    #             del request.meta['proxy']
-    #         request.dont_filter = True
-    #         return request
+    def process_exception(self, request, exception, spider):  # TODO test
+        spider.logger.warning("PROCESSING EXCEPTION")
+        spider.logger.warning(exception)
+
+        if 'delegate_port' in request.meta:  # почему бы не словили исключение, если использовали DeleGate - выключаем
+            self.stop_delegated(request.meta['delegate_port'])
+
+        if request.meta['tries'] >= 6:  # если мы скрапили на системной проксе, и все равно
+            # ловим исключение, даже попытавшись запроксировать еще пару раз, то все хуева :(
+            spider.closed("Ran out of proxies, system proxy got blocked, latest proxy used: " + request.meta['proxy'])
+
+        if not request.meta['proxy'] and request.meta['tries'] >= 4:  # если системный прокси прокис, а попыток дохуя
+            proxy = self.proxy_manager.get_fallback_proxy()
+
+            if proxy.find('socks') == -1:
+                request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(
+                    request.meta['proxy']
+                )
+                # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
+                request.meta['proxy'] = '0.0.0.0:' + request.meta['delegate_port']
+            else:
+                # we basically don't need to do a single thing if there's a good-ass http-proxy
+                request.meta['proxy'] = proxy
+
+            request.dont_filter = True
+            return request
+
+        if isinstance(exception, NoProxiesError):
+            # когда кончаются прокси, можно скрести на системной проксе, пока не найдутся новые - это +50 минут
+            # И угадай что?) Сюда мы попадаем т и тт, когда не можем найти приличных проксей
+            request.meta['proxy'] = None  # это чтобы не пытаться проксировать лишнего
+            request.dont_filter = True
+            return request
+        else:
+            spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['meta']}th time" )
+            if request.meta['proxy']:  # если мы дошли до сюда, то прокся неликвидна (если не на системной)
+                request.meta['tries'] -= 1
+                if 'proxy_origin' in request.meta:
+                    self.proxy_manager.blacklist_proxy(request.meta['proxy_origin'])
+                else:
+                    self.proxy_manager.blacklist_proxy(request.meta['proxy'])
+                del request.meta['proxy']
+            request.dont_filter = True
+            return request
 
 
 # class FortyGrandRequestsMiddleware:
