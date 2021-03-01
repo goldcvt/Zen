@@ -75,6 +75,15 @@ class ProxyManager:
         ).order_by(
             Proxy.last_check_time.desc()
         ).limit(1).get()
+        while proxy.location["country_code"] == "RU":
+            ProxyManager.blacklist_proxy(proxy.to_url(protocol=proto))
+            proxy = Proxy.select().join(banned, JOIN.LEFT_OUTER, on=predicate).where(
+                banned._proxy_id.is_null(True),
+                Proxy.raw_protocol == proto_num,
+                Proxy.number_of_bad_checks == bad_checks
+            ).order_by(
+                fn.Random()
+            ).limit(1).get()
         if proxy:
             return proxy.to_url(protocol=proto), proxy.location["country_code"]
         else:
