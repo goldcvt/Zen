@@ -190,7 +190,7 @@ class LatestDownloaderMiddleware:
 
     def start_delegated(self, proxy):
         port = self.port_manager.get_free_port()
-        self.port_manager.used_ports.append(port)
+        self.port_manager.reserve_port(port)
         if proxy[:6].lower() == "socks4":
             cmd = 'delegated ADMIN=nobody -P:%s SERVER=http TIMEOUT=con:15 SOCKS=%s/-4 -r' % (str(port), proxy)
         else:
@@ -201,7 +201,7 @@ class LatestDownloaderMiddleware:
     def stop_delegated(self, port):
         cmd = 'delegated -P:%s -Fkill' % str(port)
         subprocess.Popen(cmd, shell=False)
-        self.port_manager.used_ports.remove(port)
+        self.port_manager.release_port(port)
 
     def proxify(self, request):
         try:
