@@ -192,14 +192,16 @@ class LatestDownloaderMiddleware:
         port = self.port_manager.get_free_port()
         self.port_manager.reserve_port(port)
         if proxy[:6].lower() == "socks4":
-            cmd = 'delegated ADMIN=nobody -P:%s SERVER=http TIMEOUT=con:15 SOCKS=%s/-4 -r' % (str(port), proxy)
+            cmd = ['/usr/bin/delegated', 'ADMIN=nobdoy', '-P:%s' % str(port), 'SERVER=http', 'TIMEOUT=con:15',
+                   'SOCKS=%s/-4' % proxy,  '-r']
         else:
-            cmd = 'delegated ADMIN=nobody -P:%s SERVER=http TIMEOUT=con:15 SOCKS=%s' % (str(port), proxy)
+            cmd = ['/usr/bin/delegated', 'ADMIN=nobdoy', '-P:%s' % str(port), 'SERVER=http', 'TIMEOUT=con:15',
+                   'SOCKS=%s' % proxy]
         subprocess.Popen(cmd, shell=False)
         return str(port), proxy
 
     def stop_delegated(self, port):
-        cmd = 'delegated -P:%s -Fkill' % str(port)
+        cmd = ['/usr/bin/delegated', '-P:%s'% str(port), '-Fkill']
         subprocess.Popen(cmd, shell=False)
         self.port_manager.release_port(port)
 
