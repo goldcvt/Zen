@@ -23,7 +23,7 @@ class DeleGatePortManager:
 
     def release_port(self, port):  # из request.meta достается номер порта при обработке исключения - когда умер прокси
         if self.used_ports is not None:
-            self.used_ports.remove(port)
+            self.used_ports.remove(int(port))
         else:
             pass
 
@@ -96,7 +96,6 @@ class ProxyManager:
     @staticmethod
     def blacklist_proxy(proxy_string):
         proxy_string = proxy_string.split("/")[-1].split(":")[0]
-        print(proxy_string)
         proxies = Proxy.select().where(Proxy.domain == proxy_string)
         for proxy in proxies:
             BannedByYandexProxy.insert(_banned_at=datetime.now(), _proxy_id=proxy.id, last_check=None).execute()
