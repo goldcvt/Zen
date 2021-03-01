@@ -81,6 +81,7 @@ class TestDownloaderMiddleware:
 
     def process_response(self, request, response, spider):
         spider.logger.info(f"RESPONSE STATUS IS {response.status}")
+        return response
 
     def process_exception(self, request, exception, spider):
         pass
