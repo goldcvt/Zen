@@ -3,6 +3,8 @@ from ZenCrawlerSource import settings
 import geoip2.database
 import os.path
 from playhouse.postgres_ext import PostgresqlDatabase
+import requests
+import json
 
 raw_db = PostgresqlDatabase(
     *settings.DATABASE_CONNECTION_ARGS, **settings.DATABASE_CONNECTION_KWARGS,
@@ -81,16 +83,23 @@ class Proxy(peewee.Model):
     def location(self):
         if location_database_reader is None:
             return None
+        try:
+            response = location_database_reader.city(self.domain)
 
-        response = location_database_reader.city(self.domain)
+            return {
+                "latitude": response.location.latitude,
+                "longitude": response.location.longitude,
+                "country_code": response.country.iso_code,
+                "country": response.country.name,
+                "city": response.city.name,
+            }
+        except geoip2.errors.AddressNotFoundError:
+            r = requests.get("https://ipinfo.io/json", proxies={self.protocol: self.domain})
+            if r.status_code == 200:
+                return {"country_code": json.loads(r.text)["country"]}
+            else:
+                return {"country_code": "RU"}
 
-        return {
-            "latitude": response.location.latitude,
-            "longitude": response.location.longitude,
-            "country_code": response.country.iso_code,
-            "country": response.country.name,
-            "city": response.city.name,
-        }
 
     @property
     def protocol(self):
