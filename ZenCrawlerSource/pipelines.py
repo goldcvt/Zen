@@ -5,7 +5,6 @@ from psycopg2.errors import SyntaxError
 from scrapy import signals
 from ZenCrawlerSource.items import ChannelItem, ArticleItem, GalleryItem
 
-
 # Define your item pipelines here
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
@@ -14,12 +13,15 @@ from ZenCrawlerSource.items import ChannelItem, ArticleItem, GalleryItem
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+
+
 class SpeedTestPipeline:
     def process_item(self, item, spider):
         if isinstance(item, ArticleItem):
             spider.logger.info("PIPELINE ARTICLE: " + item["url"])
         if isinstance(item, ChannelItem):
             spider.logger.info("PIPELINE CHANNEL: " + item["url"])
+
 
 class ZencrawlersourcePipeline:
     def process_item(self, item, spider):
