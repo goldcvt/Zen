@@ -63,7 +63,7 @@ class ZencrawlersourceSpiderMiddleware:
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class TestMiddleware:
+class TestDownloaderMiddleware:
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.

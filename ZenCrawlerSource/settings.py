@@ -69,7 +69,7 @@ DOWNLOADER_MIDDLEWARES = {
     # 'ZenCrawlerSource.middlewares.IPTestDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.ZencrawlersourceDownloaderMiddleware': 120,
     # 'ZenCrawlerSource.middlewares.FortyGrandRequestsMiddleware': 120,
-    'ZenCrawlerSource.middlewares.LatestDownloaderMiddleware': 120,
+    'ZenCrawlerSource.middlewares.TestDownloaderMiddleware': 120,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 410,
     # 'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
