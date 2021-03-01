@@ -213,7 +213,7 @@ class LatestDownloaderMiddleware:
                 proxy, loc = self.proxy_manager.get_proxy(proto='socks5', bad_checks=0)
         # say, we managed to get some good proxies (not fallback)
         if proxy.find('socks') == -1:
-            request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(request.meta['proxy'])
+            request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(proxy)
             # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
             request.meta['proxy'] = '0.0.0.0:' + request.meta['delegate_port']
         else:
