@@ -63,6 +63,29 @@ class ZencrawlersourceSpiderMiddleware:
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
+class TestMiddleware:
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls()
+        crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
+        return s
+
+    def open_spider(self, spider):  # isn't being called upon spider's opening))
+        spider.logger.warning(f"Starting...")
+
+    def process_request(self, request, spider):
+        request.meta['proxy'] = "http://163.198.213.33:8000"
+        request.headers["Proxy-Authorization"] = basic_auth_header('hV3ph6', 'FPq2e6')
+        return
+
+    def process_response(self, request, response, spider):
+        spider.logger.info(f"RESPONSE STATUS IS {response.status}")
+
+    def process_exception(self, request, exception, spider):
+        pass
+
+
 class LatestDownloaderMiddleware:
     @classmethod
     def from_crawler(cls, crawler):
