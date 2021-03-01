@@ -202,6 +202,7 @@ class LatestDownloaderMiddleware:
 
     def stop_delegated(self, port):
         cmd = ['/usr/bin/delegated', f'-P:{str(port)}', '-Fkill']
+        print(F"KILLED DELEGATE AT {str(port)}")
         subprocess.Popen(cmd, shell=False)
         self.port_manager.release_port(port)
 
@@ -298,7 +299,7 @@ class LatestDownloaderMiddleware:
             request.dont_filter = True
             return request
         else:
-            spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['meta']}th time" )
+            spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['tries']}th time" )
             if request.meta['proxy']:  # если мы дошли до сюда, то прокся неликвидна (если не на системной)
                 request.meta['tries'] -= 1
                 if 'proxy_origin' in request.meta:
