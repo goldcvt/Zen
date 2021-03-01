@@ -78,14 +78,15 @@ class LatestDownloaderMiddleware:
         self.port_manager = DeleGatePortManager()
 
     def start_delegated(self, proxy):
+        address = proxy.split("/")[-1]
         port = self.port_manager.get_free_port()
         self.port_manager.reserve_port(port)
         if proxy[:6].lower() == "socks4":
             cmd = ['/usr/bin/delegated', 'ADMIN=nobdoy', f'-P:{str(port)}', 'SERVER=http', 'TIMEOUT=con:15',
-                   f'SOCKS={proxy}/-4',  '-r']
+                   f'SOCKS={address}/-4',  '-r']
         else:
             cmd = ['/usr/bin/delegated', 'ADMIN=nobdoy', f'-P:{str(port)}', 'SERVER=http', 'TIMEOUT=con:15',
-                   f'SOCKS={proxy}']
+                   f'SOCKS={address}']
         subprocess.Popen(cmd, shell=False)
         return str(port), proxy
 
