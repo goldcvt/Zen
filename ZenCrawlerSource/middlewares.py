@@ -13,6 +13,7 @@ from twisted.web._newclient import RequestNotSent, ResponseFailed, ResponseNever
 from itemadapter import is_item, ItemAdapter
 # from crawler_toolz import proxy_ops, db_ops
 import subprocess
+from w3lib.http import basic_auth_header
 
 
 class ZencrawlersourceSpiderMiddleware:
@@ -89,14 +90,14 @@ class LatestDownloaderMiddleware:
                    f'SOCKS={address}']
         # subprocess.Popen(cmd, shell=False)
         subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
-        print(f"DELEGATED PARENT PROCESS RUNNING AT PORT {str(port)}")
+        # print(f"DELEGATED PARENT PROCESS RUNNING AT PORT {str(port)}")
         return str(port), proxy
 
     def stop_delegated(self, port):
         cmd = ['/usr/bin/delegated', f'-P:{str(port)}', '-Fkill']
         #subprocess.Popen(cmd, shell=False)
         subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
-        print(F"KILLED DELEGATE AT {str(port)}")
+        # print(F"KILLED DELEGATE AT {str(port)}")
         self.port_manager.release_port(port)
 
     def proxify(self, request):
@@ -132,6 +133,9 @@ class LatestDownloaderMiddleware:
         else:
             request.meta['tries'] += 1
 
+        if 'Proxy-Authorization' in request.headers:
+            return
+
         if 'proxy' not in request.meta:
             spider.logger.warn("Trying to proxify")
             self.proxify(request)
@@ -149,6 +153,8 @@ class LatestDownloaderMiddleware:
             del request.meta['delegate_port']
 
         if response.status == 200:
+            if response.css("div.content div.zen-app").get() is None:  # ру-прокси или пропустили наш айпишник
+                raise BadProxyException
             return response
         elif response.status in [301, 302, 307, 303, 304, 309]:
             spider.logger.warning(f"Got REDIRECT {response.status}, giving up")
@@ -188,13 +194,23 @@ class LatestDownloaderMiddleware:
             return request
 
         if isinstance(exception, NoProxiesError):
+            if request.meta['proxy'] and request.meta['proxy'] != "http://163.198.213.33:8000":
+                self.proxy_manager.blacklist_proxy(request.meta['proxy'])
+                request.meta['proxy'] = "http://163.198.213.33:8000"
+                request.headers["Proxy-Authorization"] = basic_auth_header('hV3ph6', 'FPq2e6')
             # когда кончаются прокси, можно скрести на системной проксе, пока не найдутся новые - это +50 минут
             # И угадай что?) Сюда мы попадаем т и тт, когда не можем найти приличных проксей
-            request.meta['proxy'] = None  # это чтобы не пытаться проксировать лишнего
+
+            # это чтобы не пытаться проксировать лишнего
             request.dont_filter = True
             return request
         else:
-            spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['tries']}th time" )
+            spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['tries']}th time")
+
+            if request.meta['proxy'] == "http://163.198.213.33:8000":
+                del request.header["Proxy-Authorization"]
+                request.meta["tries"] += 1
+
             if request.meta['proxy']:  # если мы дошли до сюда, то прокся неликвидна (если не на системной)
                 request.meta['tries'] -= 1
                 if 'proxy_origin' in request.meta:
