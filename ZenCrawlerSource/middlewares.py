@@ -87,12 +87,14 @@ class LatestDownloaderMiddleware:
         else:
             cmd = ['/usr/bin/delegated', 'ADMIN=nobdoy', f'-P:{str(port)}', 'SERVER=http', 'TIMEOUT=con:15',
                    f'SOCKS={address}']
-        subprocess.Popen(cmd, shell=False)
+        # subprocess.Popen(cmd, shell=False)
+        subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
         return str(port), proxy
 
     def stop_delegated(self, port):
         cmd = ['/usr/bin/delegated', f'-P:{str(port)}', '-Fkill']
-        subprocess.Popen(cmd, shell=False)
+        #subprocess.Popen(cmd, shell=False)
+        subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
         print(F"KILLED DELEGATE AT {str(port)}")
         self.port_manager.release_port(port)
 
