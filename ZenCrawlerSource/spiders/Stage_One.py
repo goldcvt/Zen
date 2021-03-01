@@ -423,15 +423,18 @@ class ExampleSpider(scrapy.Spider):
             except KeyError:
                 pass
             search_scope = json.loads(my_json["publication"]["content"]["articleContent"]["contentState"])
-            for i in search_scope['items']:
-                try:
-                    if i['has_bad_text']:
-                        publication.has_bad_text = True
-                    if i['had_bad_image']:
-                        publication.had_bad_image = True
-                except Exception:
-                    pass
-
+            try:
+                for i in search_scope['items']:
+                    try:
+                        if i['has_bad_text']:
+                            publication.has_bad_text = True
+                        if i['had_bad_image']:
+                            publication.had_bad_image = True
+                    except Exception:
+                        pass
+            except KeyError:
+                publication.has_bad_text = False
+                publication.had_bad_image = False
     @staticmethod
     def get_date_old(datestring):
         elements = datestring.lower().split("\xa0")
