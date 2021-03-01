@@ -16,10 +16,10 @@ class DeleGatePortManager:
 
     def reserve_port(self, port):
         if self.used_ports is not None:
-            self.used_ports.append(port)
+            self.used_ports.append(int(port))
         else:
             self.used_ports = []
-            self.used_ports.append(port)
+            self.used_ports.append(int(port))
 
     def release_port(self, port):  # из request.meta достается номер порта при обработке исключения - когда умер прокси
         if self.used_ports is not None:
