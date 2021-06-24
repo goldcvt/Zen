@@ -14,6 +14,7 @@ from itemadapter import is_item, ItemAdapter
 # from crawler_toolz import proxy_ops, db_ops
 import subprocess
 from w3lib.http import basic_auth_header
+import os
 
 
 class ZencrawlersourceSpiderMiddleware:
@@ -71,7 +72,7 @@ class TestDownloaderMiddleware:
         crawler.signals.connect(s.open_spider, signal=signals.spider_opened)
         return s
 
-    def open_spider(self, spider):  # isn't being called upon spider's opening))
+    def open_spider(self, spider):  # isn't being called upon spider's opening, wtf?
         spider.logger.warning(f"Starting...")
 
     def process_request(self, request, spider):
@@ -132,7 +133,7 @@ class LatestDownloaderMiddleware:
                 proxy, loc = self.proxy_manager.get_proxy(proto='socks4', bad_checks=0)
             except NoProxiesError:
                 proxy, loc = self.proxy_manager.get_proxy(proto='socks5', bad_checks=0)
-        # say, we managed to get some good proxies (not fallback)
+        # say, we managed to get some good proxies from db (not fallback)
         if proxy.find('socks') != -1:
             request.meta['delegate_port'], request.meta['proxy_origin'] = self.start_delegated(proxy)
             # so we change the proxy to our 'middleman' proxy server, it already knows the actual proxy address
@@ -165,7 +166,7 @@ class LatestDownloaderMiddleware:
             self.proxify(request)
             return
 
-        # сюда попадаем только когда кончились прокси и мы временно на системном, но засиделись
+        # we can get to here only if we're out of proxies or have been using fallback system proxy for too long
         if request.meta['tries'] == 6:
             self.proxify(request)
 
@@ -177,7 +178,7 @@ class LatestDownloaderMiddleware:
             del request.meta['delegate_port']
 
         if response.status == 200:
-            if response.css("div.content div.zen-app").get() is None:  # ру-прокси или пропустили наш айпишник
+            if response.css("div.content div.zen-app").get() is None:  # case of russian proxy 
                 raise BadProxyException
             return response
         elif response.status in [301, 302, 307, 303, 304, 309]:
@@ -193,15 +194,15 @@ class LatestDownloaderMiddleware:
         spider.logger.warning("PROCESSING EXCEPTION")
         spider.logger.warning(exception)
 
-        if 'delegate_port' in request.meta:  # почему бы не словили исключение, если использовали DeleGate - выключаем
+        if 'delegate_port' in request.meta:  # Stop DeleGate server if encountered some sort of problem during the request
             self.stop_delegated(request.meta['delegate_port'])
             del request.meta['delegate_port']
 
-        if request.meta['tries'] >= 6:  # если мы скрапили на системной проксе, и все равно
-            # ловим исключение, даже попытавшись запроксировать еще пару раз, то все хуева :(
+        if request.meta['tries'] >= 6:  # if we've been using fallback system proxy
+            # but then are trying to get any new proxies and use them but still can't get through we're done :(
             spider.closed("Ran out of proxies, system proxy got blocked, latest proxy used: " + request.meta['proxy'])
 
-        if not request.meta['proxy'] and request.meta['tries'] >= 4:  # если системный прокси прокис, а попыток дохуя
+        if not request.meta['proxy'] and request.meta['tries'] >= 4:  # try to get new db fallback proxy instead of fallback system proxy
             proxy = self.proxy_manager.get_fallback_proxy()
 
             if proxy.find('socks') != -1:
@@ -218,24 +219,25 @@ class LatestDownloaderMiddleware:
             return request
 
         if isinstance(exception, NoProxiesError):
-            if request.meta['proxy'] and request.meta['proxy'] != "http://163.198.213.33:8000":
+            if request.meta['proxy'] and request.meta['proxy'] != f"http://{os.environ['fallback_system_proxy_ip']}:{os.environ['fallback_system_proxy_port']}":
                 self.proxy_manager.blacklist_proxy(request.meta['proxy'])
-                request.meta['proxy'] = "http://163.198.213.33:8000"
-                request.headers["Proxy-Authorization"] = basic_auth_header('hV3ph6', 'FPq2e6')
-            # когда кончаются прокси, можно скрести на системной проксе, пока не найдутся новые - это +50 минут
-            # И угадай что?) Сюда мы попадаем т и тт, когда не можем найти приличных проксей
+                request.meta['proxy'] = f"http://{os.environ['fallback_system_proxy_ip']}:{os.environ['fallback_system_proxy_port']}"
+                request.headers["Proxy-Authorization"] = basic_auth_header(f'{os.environ["fallback_system_proxy_usr"]}', 
+                                                                           f'{os.environ["fallback_system_proxy_pass"]}')
+            # this block switches proxy to fallback system proxy. It can get us additional 40 minutes to scrape some new ones
+            # Guess what - we only get here when we can't get any good proxies out of db
 
-            # это чтобы не пытаться проксировать лишнего
+            # To actually retry the failed request we must disable scrapy's dupefilter
             request.dont_filter = True
             return request
         else:
             spider.logger.warning("Request to " + request.url + f" is retrying {request.meta['tries']}th time")
 
-            if request.meta['proxy'] == "http://163.198.213.33:8000":
+            if request.meta['proxy'] == f"http://{os.environ['fallback_system_proxy_ip']}:{os.environ['fallback_system_proxy_port']}":
                 del request.header["Proxy-Authorization"]
                 request.meta["tries"] += 1
 
-            if request.meta['proxy']:  # если мы дошли до сюда, то прокся неликвидна (если не на системной)
+            if request.meta['proxy']:  # this gets fired when our current proxy is invalid
                 request.meta['tries'] -= 1
                 if 'proxy_origin' in request.meta:
                     self.proxy_manager.blacklist_proxy(request.meta['proxy_origin'])
