@@ -21,7 +21,7 @@ class DeleGatePortManager:
             self.used_ports = []
             self.used_ports.append(int(port))
 
-    def release_port(self, port):  # из request.meta достается номер порта при обработке исключения - когда умер прокси
+    def release_port(self, port):
         if self.used_ports is not None:
             self.used_ports.remove(int(port))
         else:
@@ -49,12 +49,6 @@ class BadProxyException(BaseException):
 
 
 class ProxyManager:
-    '''
-    SELECT * FROM proxies
-    LEFT JOIN banned_by_yandex AS banned
-        ON banned.__proxy_id = proxies.id
-    WHERE banned.__proxy_id IS NULL
-    '''
 
     @staticmethod
     def get_proxy(proto='http', bad_checks=0):
