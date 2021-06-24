@@ -1,3 +1,4 @@
+import os
 # Scrapy settings for ZenCrawlerSource project
 #
 # For simplicity, this file contains only settings considered important or
@@ -8,10 +9,10 @@
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 DATABASE_CONNECTION_ARGS = ()
 DATABASE_CONNECTION_KWARGS = {
-    'host': '146.185.242.87',
+    'host': f'{os.environ["db_host"]}',
     'database': 'proxy_py',
-    'user': 'proxy_py',
-    'password': 'proxy_py',
+    'user': f'{os.environ["db_user"]}',
+    'password': f'{os.environ["db_pass"]}',
 }
 DB_MAX_DOMAIN_LENGTH = 128
 DB_AUTH_DATA_MAX_LENGTH = 64
@@ -21,9 +22,6 @@ BOT_NAME = 'ZenCrawlerSource'
 SPIDER_MODULES = ['ZenCrawlerSource.spiders']
 NEWSPIDER_MODULE = 'ZenCrawlerSource.spiders'
 GEOLITE2_CITY_FILE_LOCATION = '/home/ubuntu/GeoLite2-City_20210223/GeoLite2-City.mmdb'
-
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'ZenCrawlerSource (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -120,8 +118,6 @@ MEMDEBUG_ENABLED = False
 RETRY_ENABLED = True
 
 # CloseSpider Ext SETTINGS - ANCHOR
-# Кстати, очевидно, что если мы закроем паучару, то соединения тоже закроются и нихуя мы уже не запишем, если оно в
-# пайплайне
 # CLOSESPIDER_ITEMCOUNT = 10
 # CLOSESPIDER_TIMEOUT = 720000
 
