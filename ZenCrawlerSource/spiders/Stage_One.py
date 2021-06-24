@@ -71,7 +71,7 @@ class Galleries:
                     if "attribs" in j.keys():
                         if "href" in j["attribs"].keys():
                             link = j["attribs"]["href"]
-                            for i in non_arbitrage:  # проверка на ссылочный мусор
+                            for i in non_arbitrage:  # check if url aren't common urls so that author is actually using some custom shop url or whatever
                                 if (link).find(i) != -1:
                                     tmp = True
                                     link = ""
@@ -142,7 +142,7 @@ class Articles:
         if_header = response.css("h2.article-render__block a.article-link::attr(href)").get() or response.css("h3.article-render__block a.article-link::attr(href)").get() or ""
         tmp = False
 
-        for i in non_arbitrage: # проверка на ссылочный мусор
+        for i in non_arbitrage: # check that urls are not your common urls like twitter.com etc
             if (if_p + if_blockquote + if_header).find(i) != -1:
                 tmp = True
                 break
@@ -200,12 +200,12 @@ class ExampleSpider(scrapy.Spider):
 
     def parse(self, response):
         for a in tqdm(response.css("div.alphabet__list a.alphabet__item::attr(href)").getall()):
-            if "firstChars" in a:  # можно впрочем итерироваться и не по буквам) тогда соотв. наоборот not
+            if "firstChars" in a:
                 yield response.follow(a, callback=self.parse_by_letter, dont_filter=True)
 
     def parse_by_letter(self, response):
         channel_top = response.css("a.channel-item__link").get()
-        if channel_top: # DONE чекни, мб мы проебываем 1 страницу выдачи в каждой
+        if channel_top:
             next_page = response.css(
                 "div.pagination-prev-next__button a.pagination-prev-next__link::attr(href)").getall()
             if len(next_page) > 1:
@@ -224,7 +224,7 @@ class ExampleSpider(scrapy.Spider):
                 for chan in chans:
                     yield response.follow(chan, callback=self.parse_channel)
 
-    def parse_channel(self, response): # DONE перевели на классы
+    def parse_channel(self, response):
         self.logger.info("Channel name: " +
                          response.css("div.zen-app div.channel-header-view-desktop__info-block h1 span::text").get())
         default_stats = response.css("div.zen-app div.channel-info-view__block div.channel-info-view__value::text").getall()
@@ -249,7 +249,6 @@ class ExampleSpider(scrapy.Spider):
 
         # can move that line to top and make if statement, so we only get channels w/ articles to bd
         urls = response.css("div.card-wrapper__inner a.card-image-view__clickable::attr(href)").getall()[:5]
-        # уже специфично для статей
 
         galls = response.css("div.card-wrapper__inner a.card-gallery-desktop-view__clickable::attr(href)").getall()[:5]
 
@@ -261,7 +260,7 @@ class ExampleSpider(scrapy.Spider):
 
         if chan.audience < 10000:  # TODO adjust this condition if there will be not that many channels
             if urls:
-                if urls[0].find("zen.yandex.ru"):   # мало ли, вдруг мы зашли на сайтовый канал
+                if urls[0].find("zen.yandex.ru"):   # checking that this channel isn't a website connected to zen
                     yield response.follow(urls[0],
                                           callback=self.fetch_article,
                                           cb_kwargs=dict(other_pubs=urls[1:])
@@ -286,7 +285,6 @@ class ExampleSpider(scrapy.Spider):
             gall_item = self.itemize_gallery(gall)
             yield gall_item
 
-        # TODO check here
         if other_pubs and gall.created_at > (datetime.date.today() - datetime.timedelta(days=10)):
             yield from response.follow_all(other_pubs,
                                      callback=self.fetch_gallery
@@ -307,13 +305,12 @@ class ExampleSpider(scrapy.Spider):
         pub_id = ''.join(response.url.split("?")[0].split('-')[-1])
         views_req_url = f"https://zen.yandex.ru/media-api/publication-view-stat?publicationId={pub_id}"
 
-        try:  # вот такое чувство, что все ломается именно здесь - потому и не было явных ошибок
+        try:
             yield response.follow(views_req_url, callback=self.get_reads, cb_kwargs=dict(publication=article))
         except Exception:
             art_item = self.itemize_article(article)
             yield art_item
 
-        #TODO pay attention
         if other_pubs and article.created_at > (datetime.date.today() - datetime.timedelta(days=10)):
             yield from response.follow_all(other_pubs,
                                      callback=self.fetch_article
@@ -454,7 +451,7 @@ class ExampleSpider(scrapy.Spider):
             else:
                 final_date = datetime.datetime(int(elements[2]), month, int(elements[0]), 4, 20, 0, 0)
         # datestring.lower().find('today') != -1 or
-        elif datestring.lower().find('егодня') != -1:  # TODO пофиксить отображение времени, эти 4.20 - такое себе
+        elif datestring.lower().find('егодня') != -1:  # TODO fix default time
             final_date = datetime.datetime.now()
         # datestring.lower().find('yesterday') != -1 or
         elif datestring.lower().find('чера') != -1:
@@ -479,7 +476,7 @@ class ExampleSpider(scrapy.Spider):
         self.logger.warning(reason)
 
 
-class MySpider(scrapy.Spider):
+class MySpider(scrapy.Spider): # a spider to check if proxies are actually hiding us
     name = "ip_spider"
 
     allowed_domains = ["httpbin.org"]
