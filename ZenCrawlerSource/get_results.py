@@ -20,7 +20,7 @@ def main():
 
 # sql connection section
 def establish_conn():
-    return psycopg2.connect("zen_copy", "postgres", "postgres", "127.0.0.1")
+    return psycopg2.connect("zen_copy", "postgres", "", "127.0.0.1")
 
 
 # sql queries and logic
