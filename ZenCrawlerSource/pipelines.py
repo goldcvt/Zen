@@ -38,8 +38,8 @@ class ChannelPipeline:
 
     def __init__(self):
         self.db = "zen_copy"
-        self.usr = "obama"
-        self.pswd = "obama"
+        self.usr = ""
+        self.pswd = ""
         self.hst = "127.0.0.1"
         self.conn = None
 
