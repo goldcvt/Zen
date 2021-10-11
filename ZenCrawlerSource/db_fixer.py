@@ -1,7 +1,7 @@
 from crawler_toolz import db_ops as do
 import psycopg2
 
-conn = psycopg2.connect("zen_copy", "obama", "obama", "127.0.0.1")
+conn = psycopg2.connect("zen_copy", "", "", "127.0.0.1")
 
 my_curs = conn.cursor()
 articles_to_fix = my_curs.execute("SELECT DISTINCT channel_url FROM articles WHERE channel_id=''").fetchall()
